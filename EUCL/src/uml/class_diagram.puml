@@ -4,16 +4,6 @@ skinparam classAttributeIconSize 0
 skinparam linetype ortho
 
 ' ─── Enums ───────────────────────────────────────────
-enum Department {
-    ICT
-    CORPORATE
-    COMMERCIAL
-    FINANCE
-    TRANSMISSION
-    GENERATION
-    OPERATION
-}
-
 enum DeviceStatus {
     ACTIVE
     IN_REPAIR
@@ -27,7 +17,7 @@ enum UserRole {
 }
 
 ' ─── Entities ────────────────────────────────────────
-class Location {
+class Branch {
     - id : Long
     - name : String
     - address : String
@@ -35,12 +25,17 @@ class Location {
     + getEmployees() : List<Employee>
 }
 
+class Department {
+    - id : Long
+    - name : String
+}
+
 class Employee {
     - id : Long
     - employeeId : String
     - name : String
     - department : Department
-    - location : Location
+    - branch : Branch
     + getAssignments() : List<DeviceAssignment>
 }
 
@@ -51,7 +46,7 @@ class Device {
     - serialNumber : String
     - deviceType : String
     - status : DeviceStatus
-    - location : Location
+    - branch : Branch
     + getAssignmentHistory() : List<DeviceAssignment>
 }
 
@@ -75,11 +70,19 @@ class AppUser {
 }
 
 ' ─── Services ────────────────────────────────────────
-class LocationService {
-    + create(request) : Location
-    + findAll() : List<Location>
-    + findById(id) : Location
-    + update(id, request) : Location
+class DepartmentService {
+    + create(request) : Department
+    + findAll() : List<Department>
+    + findById(id) : Department
+    + update(id, request) : Department
+    + delete(id) : void
+}
+
+class BranchService {
+    + create(request) : Branch
+    + findAll() : List<Branch>
+    + findById(id) : Branch
+    + update(id, request) : Branch
     + delete(id) : void
 }
 
@@ -88,7 +91,7 @@ class EmployeeService {
     + findAll() : List<Employee>
     + findById(id) : Employee
     + findByDepartment(dept) : List<Employee>
-    + findByLocation(locationId) : List<Employee>
+    + findByBranch(branchId) : List<Employee>
     + update(id, request) : Employee
     + delete(id) : void
 }
@@ -98,7 +101,7 @@ class DeviceService {
     + findAll() : List<Device>
     + findById(id) : Device
     + findByStatus(status) : List<Device>
-    + findByLocation(locationId) : List<Device>
+    + findByBranch(branchId) : List<Device>
     + update(id, request) : Device
     + delete(id) : void
 }
@@ -112,12 +115,20 @@ class DeviceAssignmentService {
 }
 
 ' ─── Controllers ─────────────────────────────────────
-class LocationController {
-    + POST /locations
-    + GET /locations
-    + GET /locations/{id}
-    + PUT /locations/{id}
-    + DELETE /locations/{id}
+class DepartmentController {
+    + POST /departments
+    + GET /departments
+    + GET /departments/{id}
+    + PUT /departments/{id}
+    + DELETE /departments/{id}
+}
+
+class BranchController {
+    + POST /branches
+    + GET /branches
+    + GET /branches/{id}
+    + PUT /branches/{id}
+    + DELETE /branches/{id}
 }
 
 class EmployeeController {
@@ -125,6 +136,7 @@ class EmployeeController {
     + GET /employees
     + GET /employees/{id}
     + GET /employees/department/{dept}
+    + GET /employees/branch/{branchId}
     + PUT /employees/{id}
     + DELETE /employees/{id}
 }
@@ -134,7 +146,7 @@ class DeviceController {
     + GET /devices
     + GET /devices/{id}
     + GET /devices/status/{status}
-    + GET /devices/location/{locationId}
+    + GET /devices/branch/{branchId}
     + PUT /devices/{id}
     + DELETE /devices/{id}
 }
@@ -148,7 +160,8 @@ class DeviceAssignmentController {
 }
 
 ' ─── Repositories ────────────────────────────────────
-interface LocationRepository
+interface DepartmentRepository
+interface BranchRepository
 interface EmployeeRepository
 interface DeviceRepository
 interface DeviceAssignmentRepository
@@ -156,23 +169,27 @@ interface AppUserRepository
 
 ' ─── Relationships ───────────────────────────────────
 Employee --> Department
-Employee --> Location
+Department <-- Employee
+Employee --> Branch
 Device --> DeviceStatus
-Device --> Location
+Device --> Branch
 DeviceAssignment --> Device
 DeviceAssignment --> Employee
 DeviceAssignment --> AppUser
 AppUser --> UserRole
 AppUser --> Employee
 
-LocationService --> LocationRepository
+DepartmentService --> DepartmentRepository
+BranchService --> BranchRepository
 EmployeeService --> EmployeeRepository
+EmployeeService --> DepartmentRepository
 DeviceService --> DeviceRepository
 DeviceAssignmentService --> DeviceAssignmentRepository
 DeviceAssignmentService --> DeviceRepository
 DeviceAssignmentService --> EmployeeRepository
 
-LocationController --> LocationService
+DepartmentController --> DepartmentService
+BranchController --> BranchService
 EmployeeController --> EmployeeService
 DeviceController --> DeviceService
 DeviceAssignmentController --> DeviceAssignmentService

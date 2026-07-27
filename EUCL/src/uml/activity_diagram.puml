@@ -11,7 +11,7 @@ title EUCL Inventory - Core Activity Flows
 ' ══════════════════════════════════════════
 |ICT Staff / Admin|
 start
-:Provide device details\n(tag number, model, serial number,\ndevice type, location);
+:Provide device details\n(tag number, model, serial number,\ndevice type, branch);
 
 |System|
 if (Tag number or serial number already exists?) then (yes)
@@ -63,7 +63,7 @@ endif
 ' FLOW 4: Transfer Device
 ' ══════════════════════════════════════════
 |ICT Staff / Admin|
-:Provide transfer details\n(device, new employee or new location, note);
+:Provide transfer details\n(device, new employee or new branch, note);
 
 |System|
 if (Device has active assignment?) then (yes)
@@ -71,7 +71,7 @@ if (Device has active assignment?) then (yes)
 else (no)
 endif
 :Create new DeviceAssignment\nfor new employee (if provided);
-:Update device location\n(if new location provided);
+:Update device branch\n(if new branch provided);
 :Return new assignment record;
 
 ' ══════════════════════════════════════════

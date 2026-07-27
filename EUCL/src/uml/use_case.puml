@@ -8,12 +8,20 @@ actor "ICT Staff" as ict
 
 rectangle "EUCL Inventory System" {
 
-    ' ─── Location Management ─────────────────────────
-    package "Location Management" {
-        usecase "Add Location" as UC1
-        usecase "View Locations" as UC2
-        usecase "Update Location" as UC3
-        usecase "Delete Location" as UC4
+    ' ─── Department Management ────────────────────────
+    package "Department Management" {
+        usecase "Add Department" as UC24
+        usecase "View Departments" as UC25
+        usecase "Update Department" as UC26
+        usecase "Delete Department" as UC27
+    }
+
+    ' ─── Branch Management ─────────────────────────
+    package "Branch Management" {
+        usecase "Add Branch" as UC1
+        usecase "View Branches" as UC2
+        usecase "Update Branch" as UC3
+        usecase "Delete Branch" as UC4
     }
 
     ' ─── Employee Management ─────────────────────────
@@ -21,7 +29,7 @@ rectangle "EUCL Inventory System" {
         usecase "Add Employee" as UC5
         usecase "View Employees" as UC6
         usecase "Filter by Department" as UC7
-        usecase "Filter by Location" as UC8
+        usecase "Filter by Branch" as UC8
         usecase "Update Employee" as UC9
         usecase "Delete Employee" as UC10
     }
@@ -31,7 +39,7 @@ rectangle "EUCL Inventory System" {
         usecase "Register Device" as UC11
         usecase "View Devices" as UC12
         usecase "Filter by Status" as UC13
-        usecase "Filter by Location" as UC14
+        usecase "Filter by Branch" as UC14
         usecase "Update Device" as UC15
         usecase "Delete Device" as UC16
     }
@@ -53,6 +61,11 @@ rectangle "EUCL Inventory System" {
 }
 
 ' ─── Admin access ────────────────────────────────────
+admin --> UC24
+admin --> UC25
+admin --> UC26
+admin --> UC27
+
 admin --> UC1
 admin --> UC2
 admin --> UC3
@@ -82,6 +95,7 @@ admin --> UC22
 admin --> UC23
 
 ' ─── ICT Staff access ────────────────────────────────
+ict --> UC25
 ict --> UC2
 ict --> UC6
 ict --> UC7

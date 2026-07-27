@@ -1,0 +1,60 @@
+@startuml ERD
+
+!define TABLE(name,desc) class name as "desc" << (T,#FFAAAA) >>
+!define PK(x) <u>x</u>
+!define FK(x) <i>x</i>
+
+hide methods
+hide stereotypes
+
+TABLE(location, "location") {
+    PK(id) BIGINT
+    name VARCHAR
+    address VARCHAR
+}
+
+TABLE(employee, "employee") {
+    PK(id) BIGINT
+    employee_id VARCHAR UNIQUE
+    name VARCHAR
+    department ENUM
+    FK(location_id) BIGINT
+}
+
+TABLE(device, "device") {
+    PK(id) BIGINT
+    tag_number VARCHAR UNIQUE
+    model VARCHAR
+    serial_number VARCHAR UNIQUE
+    device_type VARCHAR
+    status ENUM
+    FK(location_id) BIGINT
+}
+
+TABLE(device_assignment, "device_assignment") {
+    PK(id) BIGINT
+    FK(device_id) BIGINT
+    FK(employee_id) BIGINT
+    FK(assigned_by) BIGINT
+    assigned_at DATETIME
+    unassigned_at DATETIME
+    note VARCHAR
+    is_active BOOLEAN
+}
+
+TABLE(app_user, "app_user") {
+    PK(id) BIGINT
+    username VARCHAR UNIQUE
+    password VARCHAR
+    role ENUM
+    FK(employee_id) BIGINT
+}
+
+location "1" -- "0..*" employee : "has"
+location "1" -- "0..*" device : "stored at"
+employee "1" -- "0..*" device_assignment : "assigned"
+device "1" -- "0..*" device_assignment : "tracked by"
+app_user "1" -- "0..*" device_assignment : "performed by"
+app_user "1" -- "1" employee : "linked to"
+
+@enduml

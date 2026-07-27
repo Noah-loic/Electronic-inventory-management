@@ -1,0 +1,102 @@
+@startuml UseCaseDiagram
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Admin" as admin
+actor "ICT Staff" as ict
+
+rectangle "EUCL Inventory System" {
+
+    ' ─── Location Management ─────────────────────────
+    package "Location Management" {
+        usecase "Add Location" as UC1
+        usecase "View Locations" as UC2
+        usecase "Update Location" as UC3
+        usecase "Delete Location" as UC4
+    }
+
+    ' ─── Employee Management ─────────────────────────
+    package "Employee Management" {
+        usecase "Add Employee" as UC5
+        usecase "View Employees" as UC6
+        usecase "Filter by Department" as UC7
+        usecase "Filter by Location" as UC8
+        usecase "Update Employee" as UC9
+        usecase "Delete Employee" as UC10
+    }
+
+    ' ─── Device Management ───────────────────────────
+    package "Device Management" {
+        usecase "Register Device" as UC11
+        usecase "View Devices" as UC12
+        usecase "Filter by Status" as UC13
+        usecase "Filter by Location" as UC14
+        usecase "Update Device" as UC15
+        usecase "Delete Device" as UC16
+    }
+
+    ' ─── Assignment & Tracking ───────────────────────
+    package "Assignment & Tracking" {
+        usecase "Assign Device to Employee" as UC17
+        usecase "Unassign Device" as UC18
+        usecase "Transfer Device (Branch/Employee)" as UC19
+        usecase "View Device History" as UC20
+        usecase "View Employee Active Devices" as UC21
+    }
+
+    ' ─── User Management ─────────────────────────────
+    package "User Management" {
+        usecase "Create User Account" as UC22
+        usecase "Manage Roles" as UC23
+    }
+}
+
+' ─── Admin access ────────────────────────────────────
+admin --> UC1
+admin --> UC2
+admin --> UC3
+admin --> UC4
+
+admin --> UC5
+admin --> UC6
+admin --> UC7
+admin --> UC8
+admin --> UC9
+admin --> UC10
+
+admin --> UC11
+admin --> UC12
+admin --> UC13
+admin --> UC14
+admin --> UC15
+admin --> UC16
+
+admin --> UC17
+admin --> UC18
+admin --> UC19
+admin --> UC20
+admin --> UC21
+
+admin --> UC22
+admin --> UC23
+
+' ─── ICT Staff access ────────────────────────────────
+ict --> UC2
+ict --> UC6
+ict --> UC7
+ict --> UC8
+
+ict --> UC11
+ict --> UC12
+ict --> UC13
+ict --> UC14
+ict --> UC15
+
+ict --> UC17
+ict --> UC18
+ict --> UC19
+ict --> UC20
+ict --> UC21
+
+@enduml

@@ -1,0 +1,89 @@
+@startuml ActivityDiagram
+
+skinparam activityBackgroundColor #f0f8ff
+skinparam activityBorderColor #336699
+skinparam arrowColor #336699
+
+title EUCL Inventory - Core Activity Flows
+
+' ══════════════════════════════════════════
+' FLOW 1: Register a Device
+' ══════════════════════════════════════════
+|ICT Staff / Admin|
+start
+:Provide device details\n(tag number, model, serial number,\ndevice type, location);
+
+|System|
+if (Tag number or serial number already exists?) then (yes)
+    :Return error: Duplicate device;
+    stop
+else (no)
+    :Save device with status = UNASSIGNED;
+    :Return created device;
+endif
+
+' ══════════════════════════════════════════
+' FLOW 2: Assign Device to Employee
+' ══════════════════════════════════════════
+|ICT Staff / Admin|
+:Select device and employee\nto assign;
+
+|System|
+if (Device status is ACTIVE or UNASSIGNED?) then (no)
+    :Return error: Device not available\n(In Repair or Decommissioned);
+    stop
+else (yes)
+    if (Device already has an active assignment?) then (yes)
+        :Return error: Device already assigned;
+        stop
+    else (no)
+        :Create DeviceAssignment record\n(isActive = true, assignedAt = now);
+        :Update device status to ACTIVE;
+        :Return assignment details;
+    endif
+endif
+
+' ══════════════════════════════════════════
+' FLOW 3: Unassign Device
+' ══════════════════════════════════════════
+|ICT Staff / Admin|
+:Select active assignment to unassign\n(optional: add note);
+
+|System|
+if (Assignment exists and is active?) then (no)
+    :Return error: No active assignment found;
+    stop
+else (yes)
+    :Set unassignedAt = now, isActive = false;
+    :Update device status to UNASSIGNED;
+    :Return updated assignment;
+endif
+
+' ══════════════════════════════════════════
+' FLOW 4: Transfer Device
+' ══════════════════════════════════════════
+|ICT Staff / Admin|
+:Provide transfer details\n(device, new employee or new location, note);
+
+|System|
+if (Device has active assignment?) then (yes)
+    :Close current assignment\n(unassignedAt = now, isActive = false);
+else (no)
+endif
+:Create new DeviceAssignment\nfor new employee (if provided);
+:Update device location\n(if new location provided);
+:Return new assignment record;
+
+' ══════════════════════════════════════════
+' FLOW 5: View Device History
+' ══════════════════════════════════════════
+|ICT Staff / Admin|
+:Request history for a device;
+
+|System|
+:Fetch all DeviceAssignment records\nfor the device ordered by assignedAt DESC;
+:Return full assignment history\n(employee, dates, assigned by, notes);
+
+stop
+
+@enduml

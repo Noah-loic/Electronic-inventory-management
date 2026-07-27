@@ -1,0 +1,180 @@
+@startuml ClassDiagram
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' ─── Enums ───────────────────────────────────────────
+enum Department {
+    ICT
+    CORPORATE
+    COMMERCIAL
+    FINANCE
+    TRANSMISSION
+    GENERATION
+    OPERATION
+}
+
+enum DeviceStatus {
+    ACTIVE
+    IN_REPAIR
+    DECOMMISSIONED
+    UNASSIGNED
+}
+
+enum UserRole {
+    ADMIN
+    ICT_STAFF
+}
+
+' ─── Entities ────────────────────────────────────────
+class Location {
+    - id : Long
+    - name : String
+    - address : String
+    + getDevices() : List<Device>
+    + getEmployees() : List<Employee>
+}
+
+class Employee {
+    - id : Long
+    - employeeId : String
+    - name : String
+    - department : Department
+    - location : Location
+    + getAssignments() : List<DeviceAssignment>
+}
+
+class Device {
+    - id : Long
+    - tagNumber : String
+    - model : String
+    - serialNumber : String
+    - deviceType : String
+    - status : DeviceStatus
+    - location : Location
+    + getAssignmentHistory() : List<DeviceAssignment>
+}
+
+class DeviceAssignment {
+    - id : Long
+    - device : Device
+    - employee : Employee
+    - assignedBy : AppUser
+    - assignedAt : LocalDateTime
+    - unassignedAt : LocalDateTime
+    - note : String
+    - isActive : Boolean
+}
+
+class AppUser {
+    - id : Long
+    - username : String
+    - password : String
+    - role : UserRole
+    - employee : Employee
+}
+
+' ─── Services ────────────────────────────────────────
+class LocationService {
+    + create(request) : Location
+    + findAll() : List<Location>
+    + findById(id) : Location
+    + update(id, request) : Location
+    + delete(id) : void
+}
+
+class EmployeeService {
+    + create(request) : Employee
+    + findAll() : List<Employee>
+    + findById(id) : Employee
+    + findByDepartment(dept) : List<Employee>
+    + findByLocation(locationId) : List<Employee>
+    + update(id, request) : Employee
+    + delete(id) : void
+}
+
+class DeviceService {
+    + create(request) : Device
+    + findAll() : List<Device>
+    + findById(id) : Device
+    + findByStatus(status) : List<Device>
+    + findByLocation(locationId) : List<Device>
+    + update(id, request) : Device
+    + delete(id) : void
+}
+
+class DeviceAssignmentService {
+    + assign(request) : DeviceAssignment
+    + unassign(assignmentId, note) : DeviceAssignment
+    + transfer(request) : DeviceAssignment
+    + getHistory(deviceId) : List<DeviceAssignment>
+    + getActiveByEmployee(employeeId) : List<DeviceAssignment>
+}
+
+' ─── Controllers ─────────────────────────────────────
+class LocationController {
+    + POST /locations
+    + GET /locations
+    + GET /locations/{id}
+    + PUT /locations/{id}
+    + DELETE /locations/{id}
+}
+
+class EmployeeController {
+    + POST /employees
+    + GET /employees
+    + GET /employees/{id}
+    + GET /employees/department/{dept}
+    + PUT /employees/{id}
+    + DELETE /employees/{id}
+}
+
+class DeviceController {
+    + POST /devices
+    + GET /devices
+    + GET /devices/{id}
+    + GET /devices/status/{status}
+    + GET /devices/location/{locationId}
+    + PUT /devices/{id}
+    + DELETE /devices/{id}
+}
+
+class DeviceAssignmentController {
+    + POST /assignments/assign
+    + PUT /assignments/{id}/unassign
+    + POST /assignments/transfer
+    + GET /assignments/device/{deviceId}/history
+    + GET /assignments/employee/{employeeId}/active
+}
+
+' ─── Repositories ────────────────────────────────────
+interface LocationRepository
+interface EmployeeRepository
+interface DeviceRepository
+interface DeviceAssignmentRepository
+interface AppUserRepository
+
+' ─── Relationships ───────────────────────────────────
+Employee --> Department
+Employee --> Location
+Device --> DeviceStatus
+Device --> Location
+DeviceAssignment --> Device
+DeviceAssignment --> Employee
+DeviceAssignment --> AppUser
+AppUser --> UserRole
+AppUser --> Employee
+
+LocationService --> LocationRepository
+EmployeeService --> EmployeeRepository
+DeviceService --> DeviceRepository
+DeviceAssignmentService --> DeviceAssignmentRepository
+DeviceAssignmentService --> DeviceRepository
+DeviceAssignmentService --> EmployeeRepository
+
+LocationController --> LocationService
+EmployeeController --> EmployeeService
+DeviceController --> DeviceService
+DeviceAssignmentController --> DeviceAssignmentService
+
+@enduml

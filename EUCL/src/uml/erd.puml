@@ -1,32 +1,55 @@
 @startuml ERD
 
 !define TABLE(name,desc) class name as "desc" << (T,#FFAAAA) >>
+!define AUDITABLE(name,desc) class name as "desc" << (T,#AAD4FF) >>
 !define PK(x) <u>x</u>
 !define FK(x) <i>x</i>
 
 hide methods
 hide stereotypes
 
-TABLE(branch, "branch") {
+note as AuditNote
+  <b>Blue tables</b> extend Auditable:
+  created_at, created_by,
+  updated_at, updated_by
+end note
+
+' ─── Auditable base fields (inherited by blue tables) ───
+AUDITABLE(branch, "branch") {
     PK(id) BIGINT
     name VARCHAR
     address VARCHAR
+    --
+    created_at DATETIME
+    FK(created_by) BIGINT
+    updated_at DATETIME
+    FK(updated_by) BIGINT
 }
 
-TABLE(department, "department") {
+AUDITABLE(department, "department") {
     PK(id) BIGINT
     name VARCHAR UNIQUE
+    --
+    created_at DATETIME
+    FK(created_by) BIGINT
+    updated_at DATETIME
+    FK(updated_by) BIGINT
 }
 
-TABLE(employee, "employee") {
+AUDITABLE(employee, "employee") {
     PK(id) BIGINT
     employee_id VARCHAR UNIQUE
     name VARCHAR
     FK(department_id) BIGINT
     FK(branch_id) BIGINT
+    --
+    created_at DATETIME
+    FK(created_by) BIGINT
+    updated_at DATETIME
+    FK(updated_by) BIGINT
 }
 
-TABLE(device, "device") {
+AUDITABLE(device, "device") {
     PK(id) BIGINT
     tag_number VARCHAR UNIQUE
     model VARCHAR
@@ -34,6 +57,11 @@ TABLE(device, "device") {
     device_type VARCHAR
     status ENUM
     FK(branch_id) BIGINT
+    --
+    created_at DATETIME
+    FK(created_by) BIGINT
+    updated_at DATETIME
+    FK(updated_by) BIGINT
 }
 
 TABLE(device_assignment, "device_assignment") {
@@ -41,10 +69,21 @@ TABLE(device_assignment, "device_assignment") {
     FK(device_id) BIGINT
     FK(employee_id) BIGINT
     FK(assigned_by) BIGINT
+    FK(branch_id) BIGINT
     assigned_at DATETIME
     unassigned_at DATETIME
     note VARCHAR
     is_active BOOLEAN
+}
+
+TABLE(device_status_history, "device_status_history") {
+    PK(id) BIGINT
+    FK(device_id) BIGINT
+    FK(changed_by) BIGINT
+    old_status ENUM
+    new_status ENUM
+    reason VARCHAR
+    changed_at DATETIME
 }
 
 TABLE(app_user, "app_user") {
@@ -55,12 +94,20 @@ TABLE(app_user, "app_user") {
     FK(employee_id) BIGINT
 }
 
+' ─── Relationships ───────────────────────────────────────
 department "1" -- "0..*" employee : "belongs to"
 branch "1" -- "0..*" employee : "has"
 branch "1" -- "0..*" device : "stored at"
+branch "1" -- "0..*" device_assignment : "assigned at"
 employee "1" -- "0..*" device_assignment : "assigned"
 device "1" -- "0..*" device_assignment : "tracked by"
+device "1" -- "0..*" device_status_history : "status tracked by"
 app_user "1" -- "0..*" device_assignment : "performed by"
+app_user "1" -- "0..*" device_status_history : "changed by"
 app_user "1" -- "1" employee : "linked to"
+app_user "1" -- "0..*" branch : "created/updated by"
+app_user "1" -- "0..*" department : "created/updated by"
+app_user "1" -- "0..*" employee : "created/updated by"
+app_user "1" -- "0..*" device : "created/updated by"
 
 @enduml

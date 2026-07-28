@@ -42,13 +42,14 @@ rectangle "EUCL Inventory System" {
         usecase "Filter by Branch" as UC14
         usecase "Update Device" as UC15
         usecase "Delete Device" as UC16
+        usecase "Change Device Status" as UC28
+        usecase "View Device Status History" as UC29
     }
 
     ' ─── Assignment & Tracking ───────────────────────
     package "Assignment & Tracking" {
         usecase "Assign Device to Employee" as UC17
         usecase "Unassign Device" as UC18
-        usecase "Transfer Device (Branch/Employee)" as UC19
         usecase "View Device History" as UC20
         usecase "View Employee Active Devices" as UC21
     }
@@ -84,10 +85,11 @@ admin --> UC13
 admin --> UC14
 admin --> UC15
 admin --> UC16
+admin --> UC28
+admin --> UC29
 
 admin --> UC17
 admin --> UC18
-admin --> UC19
 admin --> UC20
 admin --> UC21
 
@@ -106,10 +108,11 @@ ict --> UC12
 ict --> UC13
 ict --> UC14
 ict --> UC15
+ict --> UC28
+ict --> UC29
 
 ict --> UC17
 ict --> UC18
-ict --> UC19
 ict --> UC20
 ict --> UC21
 

@@ -60,19 +60,32 @@ else (yes)
 endif
 
 ' ══════════════════════════════════════════
-' FLOW 4: Transfer Device
+' FLOW 4: Change Device Status
 ' ══════════════════════════════════════════
 |ICT Staff / Admin|
-:Provide transfer details\n(device, new employee or new branch, note);
+:Select device and provide\nnew status and reason;
 
 |System|
-if (Device has active assignment?) then (yes)
-    :Close current assignment\n(unassignedAt = now, isActive = false);
+if (New status same as current status?) then (yes)
+    :Return error: Status unchanged;
+    stop
 else (no)
+    if (New status is IN_REPAIR or DECOMMISSIONED\nand device has active assignment?) then (yes)
+        :Unassign device\n(close active assignment);
+    else (no)
+    endif
+    :Record old and new status\nin device_status_history;
+    :Update device status;
+    :Return updated device;
 endif
-:Create new DeviceAssignment\nfor new employee (if provided);
-:Update device branch\n(if new branch provided);
-:Return new assignment record;
+
+' ══════════════════════════════════════════
+' FLOW 5: Transfer Device
+' ══════════════════════════════════════════
+|ICT Staff / Admin|
+:To reassign a device, first unassign it\nthen assign it to the new employee;
+
+stop
 
 ' ══════════════════════════════════════════
 ' FLOW 5: View Device History

@@ -14,6 +14,14 @@ enum DeviceStatus {
 enum UserRole {
     ADMIN
     ICT_STAFF
+    BRANCH_MANAGER
+}
+
+enum RepairStatus {
+    PENDING
+    IN_PROGRESS
+    REPAIRED
+    UNREPAIRABLE
 }
 
 ' ─── Abstract Base Class ─────────────────────────────
@@ -84,6 +92,18 @@ class AppUser {
     - employee : Employee
 }
 
+class RepairRequest {
+    - id : Long
+    - device : Device
+    - requestedBy : AppUser
+    - handledBy : AppUser
+    - status : RepairStatus
+    - issueDescription : String
+    - resolutionNote : String
+    - requestedAt : LocalDateTime
+    - resolvedAt : LocalDateTime
+}
+
 ' ─── Services ────────────────────────────────────────
 class DepartmentService {
     + create(request) : Department
@@ -131,6 +151,14 @@ class DeviceAssignmentService {
 class DeviceStatusHistoryService {
     + changeStatus(request) : DeviceStatusHistory
     + getHistory(deviceId) : List<DeviceStatusHistory>
+}
+
+class RepairRequestService {
+    + submit(dto) : RepairRequest
+    + updateStatus(id, dto) : RepairRequest
+    + findAll() : List<RepairRequest>
+    + findByBranch(userId) : List<RepairRequest>
+    + findByStatus(status) : List<RepairRequest>
 }
 
 ' ─── Controllers ─────────────────────────────────────
@@ -182,6 +210,14 @@ class DeviceStatusHistoryController {
     + GET /devices/{id}/status-history
 }
 
+class RepairRequestController {
+    + POST /repair-requests
+    + PUT /repair-requests/{id}/status
+    + GET /repair-requests
+    + GET /repair-requests/branch?userId={id}
+    + GET /repair-requests/status/{status}
+}
+
 ' ─── Repositories ────────────────────────────────────
 interface DepartmentRepository
 interface BranchRepository
@@ -189,6 +225,7 @@ interface EmployeeRepository
 interface DeviceRepository
 interface DeviceAssignmentRepository
 interface DeviceStatusHistoryRepository
+interface RepairRequestRepository
 interface AppUserRepository
 
 ' ─── Inheritance ─────────────────────────────────────
@@ -209,6 +246,9 @@ DeviceAssignment --> Branch
 DeviceStatusHistory --> Device
 DeviceStatusHistory --> DeviceStatus
 DeviceStatusHistory --> AppUser
+RepairRequest --> Device
+RepairRequest --> RepairStatus
+RepairRequest --> AppUser
 AppUser --> UserRole
 AppUser --> Employee
 
@@ -223,6 +263,11 @@ DeviceAssignmentService --> DeviceRepository
 DeviceAssignmentService --> EmployeeRepository
 DeviceStatusHistoryService --> DeviceStatusHistoryRepository
 DeviceStatusHistoryService --> DeviceRepository
+RepairRequestService --> RepairRequestRepository
+RepairRequestService --> DeviceRepository
+RepairRequestService --> AppUserRepository
+RepairRequestService --> DeviceAssignmentRepository
+RepairRequestService --> DeviceStatusHistoryRepository
 
 ' ─── Controller → Service ────────────────────────────
 DepartmentController --> DepartmentService
@@ -231,5 +276,6 @@ EmployeeController --> EmployeeService
 DeviceController --> DeviceService
 DeviceAssignmentController --> DeviceAssignmentService
 DeviceStatusHistoryController --> DeviceStatusHistoryService
+RepairRequestController --> RepairRequestService
 
 @enduml

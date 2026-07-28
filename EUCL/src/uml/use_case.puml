@@ -5,6 +5,7 @@ skinparam packageStyle rectangle
 
 actor "Admin" as admin
 actor "ICT Staff" as ict
+actor "Branch Manager" as bm
 
 rectangle "EUCL Inventory System" {
 
@@ -54,6 +55,17 @@ rectangle "EUCL Inventory System" {
         usecase "View Employee Active Devices" as UC21
     }
 
+    ' ─── Repair Request Management ───────────────────
+    package "Repair Request Management" {
+        usecase "Submit Repair Request" as UC30
+        usecase "View Own Branch Requests" as UC31
+        usecase "View All Repair Requests" as UC32
+        usecase "Set Request IN_PROGRESS" as UC33
+        usecase "Set Request REPAIRED" as UC34
+        usecase "Set Request UNREPAIRABLE" as UC35
+        usecase "Filter Requests by Status" as UC36
+    }
+
     ' ─── User Management ─────────────────────────────
     package "User Management" {
         usecase "Create User Account" as UC22
@@ -93,6 +105,13 @@ admin --> UC18
 admin --> UC20
 admin --> UC21
 
+admin --> UC30
+admin --> UC32
+admin --> UC33
+admin --> UC34
+admin --> UC35
+admin --> UC36
+
 admin --> UC22
 admin --> UC23
 
@@ -115,5 +134,16 @@ ict --> UC17
 ict --> UC18
 ict --> UC20
 ict --> UC21
+
+ict --> UC32
+ict --> UC33
+ict --> UC34
+ict --> UC35
+ict --> UC36
+
+' ─── Branch Manager access ───────────────────────────
+bm --> UC30
+bm --> UC31
+bm --> UC36
 
 @enduml

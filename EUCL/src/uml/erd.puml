@@ -86,6 +86,18 @@ TABLE(device_status_history, "device_status_history") {
     changed_at DATETIME
 }
 
+TABLE(repair_request, "repair_request") {
+    PK(id) BIGINT
+    FK(device_id) BIGINT
+    FK(requested_by) BIGINT
+    FK(handled_by) BIGINT
+    status ENUM
+    issue_description VARCHAR
+    resolution_note VARCHAR
+    requested_at DATETIME
+    resolved_at DATETIME
+}
+
 TABLE(app_user, "app_user") {
     PK(id) BIGINT
     username VARCHAR UNIQUE
@@ -109,5 +121,7 @@ app_user "1" -- "0..*" branch : "created/updated by"
 app_user "1" -- "0..*" department : "created/updated by"
 app_user "1" -- "0..*" employee : "created/updated by"
 app_user "1" -- "0..*" device : "created/updated by"
+device "1" -- "0..*" repair_request : "requested for"
+app_user "1" -- "0..*" repair_request : "requested by / handled by"
 
 @enduml

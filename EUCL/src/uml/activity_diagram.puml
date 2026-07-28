@@ -80,7 +80,51 @@ else (no)
 endif
 
 ' ══════════════════════════════════════════
-' FLOW 5: Transfer Device
+' FLOW 5: Submit Repair Request
+' ══════════════════════════════════════════
+|Branch Manager / Admin|
+:Select device and provide\nissue description;
+
+|System|
+if (User is BRANCH_MANAGER or ADMIN?) then (no)
+    :Return error: Unauthorized;
+    stop
+else (yes)
+    :Create RepairRequest\n(status = PENDING);
+    :Return repair request;
+endif
+
+' ══════════════════════════════════════════
+' FLOW 6: Handle Repair Request (ICT Staff)
+' ══════════════════════════════════════════
+|ICT Staff / Admin|
+:Select repair request\nand provide new status + resolution note;
+
+|System|
+if (User is ICT_STAFF or ADMIN?) then (no)
+    :Return error: Unauthorized;
+    stop
+else (yes)
+    if (New status = IN_PROGRESS?) then (yes)
+        :Update device status to IN_REPAIR;
+        if (Device has active assignment?) then (yes)
+            :Close active assignment\n(unassignedAt = now, isActive = false);
+        else (no)
+        endif
+    else if (New status = REPAIRED?) then (yes)
+        :Update device status to UNASSIGNED;
+        :Set resolvedAt = now;
+    else (UNREPAIRABLE)
+        :Update device status to DECOMMISSIONED;
+        :Set resolvedAt = now;
+    endif
+    :Record status change in device_status_history;
+    :Update repair request\n(status, handledBy, resolutionNote);
+    :Return updated repair request;
+endif
+
+' ══════════════════════════════════════════
+' FLOW 7: Transfer Device
 ' ══════════════════════════════════════════
 |ICT Staff / Admin|
 :To reassign a device, first unassign it\nthen assign it to the new employee;
@@ -88,7 +132,7 @@ endif
 stop
 
 ' ══════════════════════════════════════════
-' FLOW 5: View Device History
+' FLOW 8: View Device History
 ' ══════════════════════════════════════════
 |ICT Staff / Admin|
 :Request history for a device;

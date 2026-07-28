@@ -1,11 +1,17 @@
 package com.example.EUCL.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "department")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Department extends Auditable {
 
     @Id

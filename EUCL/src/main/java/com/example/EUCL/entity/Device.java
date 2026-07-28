@@ -1,12 +1,18 @@
 package com.example.EUCL.entity;
 
 import com.example.EUCL.enums.DeviceStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "device")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Device extends Auditable {
 
     @Id
@@ -29,7 +35,7 @@ public class Device extends Auditable {
     @Column(nullable = false)
     private DeviceStatus status = DeviceStatus.UNASSIGNED;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 }

@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "device")
-public class Device {
+public class Device extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

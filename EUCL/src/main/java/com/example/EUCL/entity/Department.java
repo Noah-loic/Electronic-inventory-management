@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "department")
-public class Department {
+public class Department extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

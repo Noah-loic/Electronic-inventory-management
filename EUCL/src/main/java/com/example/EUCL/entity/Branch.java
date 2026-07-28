@@ -11,7 +11,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "branch")
-public class Branch {
+public class Branch extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

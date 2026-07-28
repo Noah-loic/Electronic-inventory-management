@@ -52,7 +52,6 @@ public class DeviceService {
         device.setModel(request.getModel());
         device.setSerialNumber(request.getSerialNumber());
         device.setDeviceType(request.getDeviceType());
-        if (request.getStatus() != null) device.setStatus(request.getStatus());
         if (request.getBranchId() != null) {
             device.setBranch(branchRepository.findById(request.getBranchId())
                     .orElseThrow(() -> new EntityNotFoundException("Branch not found")));

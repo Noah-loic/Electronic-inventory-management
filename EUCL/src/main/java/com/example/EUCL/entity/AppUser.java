@@ -1,12 +1,20 @@
 package com.example.EUCL.entity;
 
+import com.example.EUCL.enums.Permission;
 import com.example.EUCL.enums.UserRole;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+import java.util.HashSet;
+import java.util.Set;
+
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "app_user")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -30,4 +38,10 @@ public class AppUser {
     @OneToOne
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_permission", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "permission")
+    @Enumerated(EnumType.STRING)
+    private Set<Permission> permissions = new HashSet<>();
 }

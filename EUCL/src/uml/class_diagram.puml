@@ -24,6 +24,24 @@ enum RepairStatus {
     UNREPAIRABLE
 }
 
+enum Permission {
+    DEVICE_CREATE, DEVICE_READ
+    DEVICE_UPDATE, DEVICE_DELETE
+    EMPLOYEE_CREATE, EMPLOYEE_READ
+    EMPLOYEE_UPDATE, EMPLOYEE_DELETE
+    BRANCH_CREATE, BRANCH_READ
+    BRANCH_UPDATE, BRANCH_DELETE
+    DEPARTMENT_CREATE, DEPARTMENT_READ
+    DEPARTMENT_UPDATE, DEPARTMENT_DELETE
+    ASSIGNMENT_CREATE, ASSIGNMENT_READ
+    REPAIR_REQUEST_CREATE
+    REPAIR_REQUEST_READ
+    REPAIR_REQUEST_UPDATE
+    REPORT_READ
+    USER_CREATE, USER_READ
+    USER_UPDATE, USER_DELETE
+}
+
 ' ─── Abstract Base Class ─────────────────────────────
 abstract class Auditable {
     # createdAt : LocalDateTime
@@ -90,6 +108,7 @@ class AppUser {
     - password : String
     - role : UserRole
     - employee : Employee
+    - permissions : Set<Permission>
 }
 
 class RepairRequest {
@@ -161,6 +180,19 @@ class RepairRequestService {
     + findByStatus(status) : List<RepairRequest>
 }
 
+class AppUserService {
+    + create(request) : AppUser
+    + findAll() : List<AppUser>
+    + findById(id) : AppUser
+    + update(id, request) : AppUser
+    + delete(id) : void
+    + setPermissions(id, request) : AppUser
+    + grantPermissions(id, request) : AppUser
+    + revokePermissions(id, request) : AppUser
+    + resetToRoleDefaults(id) : AppUser
+    + getPermissions(id) : Set<Permission>
+}
+
 ' ─── Controllers ─────────────────────────────────────
 class DepartmentController {
     + POST /departments
@@ -218,6 +250,19 @@ class RepairRequestController {
     + GET /repair-requests/status/{status}
 }
 
+class AppUserController {
+    + POST /users
+    + GET /users
+    + GET /users/{id}
+    + PUT /users/{id}
+    + DELETE /users/{id}
+    + GET /users/{id}/permissions
+    + PUT /users/{id}/permissions
+    + POST /users/{id}/permissions/grant
+    + POST /users/{id}/permissions/revoke
+    + POST /users/{id}/permissions/reset
+}
+
 ' ─── Repositories ────────────────────────────────────
 interface DepartmentRepository
 interface BranchRepository
@@ -246,6 +291,7 @@ DeviceAssignment --> Branch
 DeviceStatusHistory --> Device
 DeviceStatusHistory --> DeviceStatus
 DeviceStatusHistory --> AppUser
+AppUser --> Permission
 RepairRequest --> Device
 RepairRequest --> RepairStatus
 RepairRequest --> AppUser
@@ -268,6 +314,8 @@ RepairRequestService --> DeviceRepository
 RepairRequestService --> AppUserRepository
 RepairRequestService --> DeviceAssignmentRepository
 RepairRequestService --> DeviceStatusHistoryRepository
+AppUserService --> AppUserRepository
+AppUserService --> EmployeeRepository
 
 ' ─── Controller → Service ────────────────────────────
 DepartmentController --> DepartmentService
@@ -277,5 +325,6 @@ DeviceController --> DeviceService
 DeviceAssignmentController --> DeviceAssignmentService
 DeviceStatusHistoryController --> DeviceStatusHistoryService
 RepairRequestController --> RepairRequestService
+AppUserController --> AppUserService
 
 @enduml

@@ -69,7 +69,18 @@ rectangle "EUCL Inventory System" {
     ' ─── User Management ─────────────────────────────
     package "User Management" {
         usecase "Create User Account" as UC22
-        usecase "Manage Roles" as UC23
+        usecase "View Users" as UC37
+        usecase "Update User" as UC38
+        usecase "Delete User" as UC39
+    }
+
+    ' ─── Permission Management ───────────────────────
+    package "Permission Management" {
+        usecase "View User Permissions" as UC40
+        usecase "Set User Permissions" as UC41
+        usecase "Grant Permissions" as UC42
+        usecase "Revoke Permissions" as UC43
+        usecase "Reset to Role Defaults" as UC44
     }
 }
 
@@ -113,7 +124,15 @@ admin --> UC35
 admin --> UC36
 
 admin --> UC22
-admin --> UC23
+admin --> UC37
+admin --> UC38
+admin --> UC39
+
+admin --> UC40
+admin --> UC41
+admin --> UC42
+admin --> UC43
+admin --> UC44
 
 ' ─── ICT Staff access ────────────────────────────────
 ict --> UC25

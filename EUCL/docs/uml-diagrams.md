@@ -7,7 +7,7 @@ To preview them in VS Code, install the **PlantUML extension** and press `Alt+D`
 
 ## 1. ERD — Entity Relationship Diagram (`erd.puml`)
 
-Represents the physical database schema with 8 tables and their relationships.
+Represents the physical database schema with 9 tables and their relationships.
 
 > Blue tables extend `Auditable` (contain audit fields). Red tables do not.
 
@@ -23,6 +23,7 @@ Represents the physical database schema with 8 tables and their relationships.
 | `device_status_history` | Red | Records every status change on a device (who changed it, from what, to what, and why). |
 | `repair_request` | Red | Records repair requests submitted by branch managers and handled by ICT staff. |
 | `app_user` | Red | Login accounts for Admin, ICT Staff and Branch Managers. Linked to an employee record. |
+| `user_permission` | Red | Join table storing fine-grained permissions per user. |
 
 ### Audit Fields (on all blue tables)
 | Field | Description |
@@ -38,7 +39,7 @@ Represents the physical database schema with 8 tables and their relationships.
 - A `device_assignment` links a `device` to an `employee` and tracks active/inactive state
 - A `device_status_history` record is created on every status change — captures `old_status`, `new_status`, `reason`, `changed_by`, `changed_at`
 - A `repair_request` is submitted by a branch manager for a broken device and handled by ICT staff at HQ
-- An `app_user` is linked to one `employee` (not all employees have a user account — only Admin, ICT Staff and Branch Managers)
+- An `app_user` has a set of permissions stored in `user_permission` — assigned by default based on role, customizable by Admin
 
 ---
 
@@ -50,6 +51,7 @@ Represents the Java application layer — entities, services, controllers, and r
 - `DeviceStatus` — `ACTIVE`, `IN_REPAIR`, `DECOMMISSIONED`, `UNASSIGNED`
 - `UserRole` — `ADMIN`, `ICT_STAFF`, `BRANCH_MANAGER`
 - `RepairStatus` — `PENDING`, `IN_PROGRESS`, `REPAIRED`, `UNREPAIRABLE`
+- `Permission` — 25 fine-grained permissions across all features (e.g. `DEVICE_CREATE`, `EMPLOYEE_READ`, `USER_DELETE`, etc.)
 
 ### Abstract Base Class — `Auditable`
 An `@MappedSuperclass` abstract class. Not a database table — its fields are inherited into each child entity's table by JPA.
@@ -75,7 +77,7 @@ Populated automatically by Spring Data JPA auditing (`@EnableJpaAuditing`).
 | `DeviceAssignment` | — | Assignment history entity |
 | `DeviceStatusHistory` | — | Status change history entity |
 | `RepairRequest` | — | Repair request entity |
-| `AppUser` | — | User account entity |
+| `AppUser` | — | User account entity with role and fine-grained permissions |
 
 ### Layered Architecture
 
@@ -85,8 +87,8 @@ Controller → Service → Repository → Database
 
 | Layer | Classes |
 |---|---|
-| Controllers | `BranchController`, `DepartmentController`, `EmployeeController`, `DeviceController`, `DeviceAssignmentController`, `DeviceStatusHistoryController`, `RepairRequestController` |
-| Services | `BranchService`, `DepartmentService`, `EmployeeService`, `DeviceService`, `DeviceAssignmentService`, `DeviceStatusHistoryService`, `RepairRequestService` |
+| Controllers | `BranchController`, `DepartmentController`, `EmployeeController`, `DeviceController`, `DeviceAssignmentController`, `DeviceStatusHistoryController`, `RepairRequestController`, `AppUserController` |
+| Services | `BranchService`, `DepartmentService`, `EmployeeService`, `DeviceService`, `DeviceAssignmentService`, `DeviceStatusHistoryService`, `RepairRequestService`, `AppUserService` |
 | Repositories | `BranchRepository`, `DepartmentRepository`, `EmployeeRepository`, `DeviceRepository`, `DeviceAssignmentRepository`, `DeviceStatusHistoryRepository`, `RepairRequestRepository`, `AppUserRepository` |
 
 ---
@@ -110,13 +112,14 @@ Shows what each actor can do in the system.
 | Device Management | Full CRUD + Change Status + View Status History | Register, view, filter, update, change status, view status history | No access |
 | Assignment & Tracking | Full access | Full access | No access |
 | Repair Request Management | Full access | Handle requests (IN_PROGRESS, REPAIRED, UNREPAIRABLE) | Submit + view own branch |
-| User Management | Full access | No access | No access |
+| User Management | Full CRUD | No access | No access |
+| Permission Management | Full access | No access | No access |
 
 ---
 
 ## 4. Activity Diagram (`activity_diagram.puml`)
 
-Covers the 8 core operational flows with decision branches and error paths.
+Covers the 10 core operational flows with decision branches and error paths.
 
 ### Flow 1 — Register a Device
 ICT Staff or Admin provides device details. System checks for duplicate tag number or serial number. If unique, saves the device with status `UNASSIGNED`.
@@ -146,3 +149,13 @@ To reassign a device to a new employee, first unassign it then assign it to the 
 
 ### Flow 8 — View Device History
 User requests history for a device. System returns all `DeviceAssignment` records for that device ordered by `assigned_at` descending.
+
+### Flow 9 — Create User
+Admin provides user details (username, password, role, employeeId). System checks for duplicate username. If unique, creates the user and automatically assigns default permissions based on the role.
+
+### Flow 10 — Manage User Permissions
+Admin selects a user and chooses a permission action:
+- `SET` — replaces all permissions with the provided set
+- `GRANT` — adds specific permissions to existing ones
+- `REVOKE` — removes specific permissions
+- `RESET` — restores default permissions based on the user's role

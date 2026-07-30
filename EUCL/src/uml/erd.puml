@@ -106,6 +106,11 @@ TABLE(app_user, "app_user") {
     FK(employee_id) BIGINT
 }
 
+TABLE(user_permission, "user_permission") {
+    FK(user_id) BIGINT
+    permission ENUM
+}
+
 ' ─── Relationships ───────────────────────────────────────
 department "1" -- "0..*" employee : "belongs to"
 branch "1" -- "0..*" employee : "has"
@@ -123,5 +128,6 @@ app_user "1" -- "0..*" employee : "created/updated by"
 app_user "1" -- "0..*" device : "created/updated by"
 device "1" -- "0..*" repair_request : "requested for"
 app_user "1" -- "0..*" repair_request : "requested by / handled by"
+app_user "1" -- "0..*" user_permission : "has"
 
 @enduml

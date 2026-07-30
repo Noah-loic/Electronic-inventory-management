@@ -143,4 +143,40 @@ stop
 
 stop
 
+' ══════════════════════════════════════════
+' FLOW 9: Create User
+' ══════════════════════════════════════════
+|Admin|
+:Provide user details\n(username, password, role, employeeId);
+
+|System|
+if (Username already exists?) then (yes)
+    :Return error: Duplicate username;
+    stop
+else (no)
+    :Create user account;
+    :Assign default permissions\nbased on role;
+    :Return created user with permissions;
+endif
+
+' ══════════════════════════════════════════
+' FLOW 10: Manage User Permissions
+' ══════════════════════════════════════════
+|Admin|
+:Select user and choose permission action\n(set / grant / revoke / reset);
+
+|System|
+if (Action = SET?) then (yes)
+    :Replace all permissions\nwith provided set;
+else if (Action = GRANT?) then (yes)
+    :Add provided permissions\nto existing ones;
+else if (Action = REVOKE?) then (yes)
+    :Remove provided permissions\nfrom existing ones;
+else (RESET)
+    :Restore default permissions\nbased on user role;
+endif
+:Return updated user with new permissions;
+
+stop
+
 @enduml

@@ -1,5 +1,6 @@
 package com.example.EUCL.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +25,7 @@ public abstract class Auditable {
     @CreatedBy
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", updatable = false)
+    @JsonIgnoreProperties({"createdBy", "updatedBy", "employee", "permissions", "hibernateLazyInitializer"})
     private AppUser createdBy;
 
     @LastModifiedDate
@@ -33,5 +35,6 @@ public abstract class Auditable {
     @LastModifiedBy
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
+    @JsonIgnoreProperties({"createdBy", "updatedBy", "employee", "permissions", "hibernateLazyInitializer"})
     private AppUser updatedBy;
 }

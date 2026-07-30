@@ -116,7 +116,7 @@ public class RepairRequestService {
         AppUser user = appUserRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
         Long branchId = user.getEmployee().getBranch().getId();
-        return repairRequestRepository.findByDeviceBranchId(branchId);
+        return repairRequestRepository.findByRequestedByEmployeeBranchId(branchId);
     }
 
     public List<RepairRequest> findByStatus(RepairStatus status) {

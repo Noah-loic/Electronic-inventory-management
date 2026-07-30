@@ -24,8 +24,7 @@ public class DeviceService {
         device.setSerialNumber(request.getSerialNumber());
         device.setDeviceType(request.getDeviceType());
         device.setStatus(request.getStatus() != null ? request.getStatus() : DeviceStatus.UNASSIGNED);
-        device.setBranch(branchRepository.findById(request.getBranchId())
-                .orElseThrow(() -> new EntityNotFoundException("Branch not found")));
+        device.setBranch(resolveHqBranch());
         return deviceRepository.save(device);
     }
 
@@ -52,11 +51,18 @@ public class DeviceService {
         device.setModel(request.getModel());
         device.setSerialNumber(request.getSerialNumber());
         device.setDeviceType(request.getDeviceType());
-        if (request.getBranchId() != null) {
-            device.setBranch(branchRepository.findById(request.getBranchId())
-                    .orElseThrow(() -> new EntityNotFoundException("Branch not found")));
+        if (request.getStatus() != null) {
+            device.setStatus(request.getStatus());
+            if (request.getStatus() != DeviceStatus.ACTIVE) {
+                device.setBranch(resolveHqBranch());
+            }
         }
         return deviceRepository.save(device);
+    }
+
+    private com.example.EUCL.entity.Branch resolveHqBranch() {
+        return branchRepository.findFirstByNameContainingIgnoreCase("HQ")
+                .orElseGet(() -> branchRepository.findAll().get(0));
     }
 
     public void delete(Long id) {

@@ -37,10 +37,12 @@ public class DeviceAssignmentService {
         if (assignmentRepository.findByDeviceIdAndIsActiveTrue(device.getId()).isPresent())
             throw new IllegalStateException("Device already has an active assignment");
 
+        var employee = employeeRepository.findById(request.getEmployeeId())
+                .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+
         DeviceAssignment assignment = new DeviceAssignment();
         assignment.setDevice(device);
-        assignment.setEmployee(employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() -> new EntityNotFoundException("Employee not found")));
+        assignment.setEmployee(employee);
         assignment.setAssignedBy(appUserRepository.findById(request.getAssignedById())
                 .orElseThrow(() -> new EntityNotFoundException("User not found")));
         assignment.setBranch(branchRepository.findById(request.getBranchId())
@@ -48,6 +50,7 @@ public class DeviceAssignmentService {
         assignment.setNote(request.getNote());
 
         device.setStatus(DeviceStatus.ACTIVE);
+        device.setBranch(employee.getBranch());
         deviceRepository.save(device);
 
         return assignmentRepository.save(assignment);
@@ -65,8 +68,11 @@ public class DeviceAssignmentService {
         assignment.setUnassignedAt(LocalDateTime.now());
         if (note != null) assignment.setNote(note);
 
-        assignment.getDevice().setStatus(DeviceStatus.UNASSIGNED);
-        deviceRepository.save(assignment.getDevice());
+        Device device = assignment.getDevice();
+        device.setStatus(DeviceStatus.UNASSIGNED);
+        branchRepository.findFirstByNameContainingIgnoreCase("HQ")
+                .ifPresent(device::setBranch);
+        deviceRepository.save(device);
 
         return assignmentRepository.save(assignment);
     }
@@ -77,5 +83,9 @@ public class DeviceAssignmentService {
 
     public List<DeviceAssignment> getActiveByEmployee(Long employeeId) {
         return assignmentRepository.findByEmployeeIdAndIsActiveTrue(employeeId);
+    }
+
+    public List<DeviceAssignment> findAll() {
+        return assignmentRepository.findAll();
     }
 }

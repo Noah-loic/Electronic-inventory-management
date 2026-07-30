@@ -14,6 +14,11 @@ public class DeviceAssignmentController {
 
     private final DeviceAssignmentService assignmentService;
 
+    @GetMapping
+    public List<DeviceAssignment> findAll() {
+        return assignmentService.findAll();
+    }
+
     @PostMapping("/assign")
     public DeviceAssignment assign(@RequestBody AssignmentRequest request) {
         return assignmentService.assign(request);

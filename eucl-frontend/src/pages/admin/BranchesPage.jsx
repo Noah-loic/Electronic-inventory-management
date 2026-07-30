@@ -117,7 +117,7 @@ export default function BranchesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {paginated.map((branch, i) => ({
+                            {paginated.map((branch, i) => (
                                 <tr key={branch.id} className="hover:bg-gray-50 transition">
                                     <td className="px-6 py-4 text-gray-400">{(page - 1) * PAGE_SIZE + i + 1}</td>
                                     <td className="px-6 py-4 font-medium text-gray-800">{branch.name}</td>

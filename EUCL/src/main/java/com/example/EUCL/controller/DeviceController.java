@@ -1,12 +1,17 @@
 package com.example.EUCL.controller;
 
+import com.example.EUCL.dto.BulkImportResult;
 import com.example.EUCL.dto.DeviceRequest;
 import com.example.EUCL.entity.Device;
 import com.example.EUCL.enums.DeviceStatus;
 import com.example.EUCL.service.DeviceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
@@ -51,5 +56,19 @@ public class DeviceController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         deviceService.delete(id);
+    }
+
+    @GetMapping("/import-template")
+    public ResponseEntity<byte[]> downloadTemplate() throws Exception {
+        byte[] bytes = deviceService.generateTemplate();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=devices_template.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
+    }
+
+    @PostMapping("/bulk-import")
+    public BulkImportResult bulkImport(@RequestParam("file") MultipartFile file) throws Exception {
+        return deviceService.importFromExcel(file);
     }
 }

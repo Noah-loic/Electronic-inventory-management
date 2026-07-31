@@ -8,6 +8,7 @@ import java.util.List;
 public interface DeviceRepository extends JpaRepository<Device, Long> {
     List<Device> findByStatus(DeviceStatus status);
     List<Device> findByBranchId(Long branchId);
-
     List<Device> findByBranchName(String branchName);
+    java.util.Optional<Device> findByTagNumber(String tagNumber);
+    java.util.Optional<Device> findBySerialNumber(String serialNumber);
 }

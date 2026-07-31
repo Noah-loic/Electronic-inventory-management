@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import devicesApi from '../../api/devices'
 import * as branchesApi from '../../api/branches'
 import Pagination from '../../components/Pagination'
+import BulkImportModal from '../../components/BulkImportModal'
 
 const PAGE_SIZE = 8
 
@@ -33,6 +34,7 @@ export default function DevicesPage() {
     const [filterStatus, setFilterStatus] = useState('ALL')
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
+    const [bulkModal, setBulkModal] = useState(false)
 
     const hqBranch = branches.find(b => /head(quarter)?|hq/i.test(b.name)) ?? branches[0] ?? null
 
@@ -109,9 +111,17 @@ export default function DevicesPage() {
                     <p className="text-sm text-gray-500 mt-0.5">Manage EUCL device inventory</p>
                 </div>
                 {canEdit && (
-                    <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                        + Add Device
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setBulkModal(true)}
+                            className="border border-gray-300 text-gray-700 hover:border-gray-400 text-sm font-medium px-4 py-2 rounded-lg transition"
+                        >
+                            ⬆ Bulk Import
+                        </button>
+                        <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                            + Add Device
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -276,6 +286,15 @@ export default function DevicesPage() {
                     </div>
                 </div>
             )}
+
+            <BulkImportModal
+                open={bulkModal}
+                onClose={() => setBulkModal(false)}
+                title="Bulk Import Devices"
+                downloadTemplate={devicesApi.downloadTemplate}
+                uploadFile={devicesApi.bulkImport}
+                onImported={fetchAll}
+            />
 
             {/* Delete Confirmation */}
             {deleteId && (

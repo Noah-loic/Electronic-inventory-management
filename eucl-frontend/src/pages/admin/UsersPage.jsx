@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import usersApi from '../../api/users'
 import employeesApi from '../../api/employees'
 import Pagination from '../../components/Pagination'
+import ComboBox from '../../components/ComboBox'
 
 const PAGE_SIZE = 8
 
@@ -258,17 +259,13 @@ export default function UsersPage() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-                                        <select
+                                        <ComboBox
                                             required
                                             value={form.employeeId}
-                                            onChange={e => field('employeeId', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Select employee</option>
-                                            {employees.map(emp => (
-                                                <option key={emp.id} value={emp.id}>{emp.name} ({emp.employeeId})</option>
-                                            ))}
-                                        </select>
+                                            onChange={v => field('employeeId', v)}
+                                            options={employees.map(emp => ({ value: emp.id, label: `${emp.name} (${emp.employeeId})` }))}
+                                            placeholder="Search employee..."
+                                        />
                                     </div>
                                 </div>
 

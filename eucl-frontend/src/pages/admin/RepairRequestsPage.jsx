@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import repairRequestsApi from '../../api/repairRequests'
 import devicesApi from '../../api/devices'
 import Pagination from '../../components/Pagination'
+import ComboBox from '../../components/ComboBox'
 
 const PAGE_SIZE = 8
 
@@ -246,17 +247,13 @@ export default function RepairRequestsPage({ branchOnly = false, useTagInput = f
                                         placeholder="Enter device tag number e.g. TAG-001"
                                     />
                                 ) : (
-                                    <select
+                                    <ComboBox
                                         required
                                         value={submitForm.deviceId}
-                                        onChange={e => setSubmitForm(f => ({ ...f, deviceId: e.target.value }))}
-                                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="">Select device</option>
-                                        {repairableDevices.map(d => (
-                                            <option key={d.id} value={d.id}>{d.model} — {d.tagNumber}</option>
-                                        ))}
-                                    </select>
+                                        onChange={v => setSubmitForm(f => ({ ...f, deviceId: v }))}
+                                        options={repairableDevices.map(d => ({ value: d.id, label: `${d.model} — ${d.tagNumber}` }))}
+                                        placeholder="Search device..."
+                                    />
                                 )}
                             </div>
                             <div>

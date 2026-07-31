@@ -5,6 +5,7 @@ import devicesApi from '../../api/devices'
 import employeesApi from '../../api/employees'
 import * as branchesApi from '../../api/branches'
 import Pagination from '../../components/Pagination'
+import ComboBox from '../../components/ComboBox'
 
 const PAGE_SIZE = 8
 
@@ -203,37 +204,29 @@ export default function AssignmentsPage() {
                         <form onSubmit={handleAssign} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Device</label>
-                                <select
+                                <ComboBox
                                     required
                                     value={form.deviceId}
-                                    onChange={e => field('deviceId', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">Select device</option>
-                                    {availableDevices.map(d => (
-                                        <option key={d.id} value={d.id}>{d.model} — {d.tagNumber}</option>
-                                    ))}
-                                </select>
+                                    onChange={v => field('deviceId', v)}
+                                    options={availableDevices.map(d => ({ value: d.id, label: `${d.model} — ${d.tagNumber}` }))}
+                                    placeholder="Search device..."
+                                />
                                 {availableDevices.length === 0 && (
                                     <p className="text-xs text-orange-500 mt-1">No unassigned devices available.</p>
                                 )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-                                <select
+                                <ComboBox
                                     required
                                     value={form.employeeId}
-                                    onChange={e => {
-                                        const emp = employees.find(emp => emp.id === Number(e.target.value))
-                                        setForm(f => ({ ...f, employeeId: e.target.value, branchId: emp?.branch?.id ?? '' }))
+                                    onChange={v => {
+                                        const emp = employees.find(e => String(e.id) === String(v))
+                                        setForm(f => ({ ...f, employeeId: v, branchId: emp?.branch?.id ?? '' }))
                                     }}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">Select employee</option>
-                                    {employees.map(emp => (
-                                        <option key={emp.id} value={emp.id}>{emp.name} ({emp.employeeId})</option>
-                                    ))}
-                                </select>
+                                    options={employees.map(emp => ({ value: emp.id, label: `${emp.name} (${emp.employeeId})` }))}
+                                    placeholder="Search employee..."
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>

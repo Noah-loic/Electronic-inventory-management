@@ -10,17 +10,23 @@ import com.example.EUCL.repository.DeviceRepository;
 import com.example.EUCL.util.ExcelUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.CellRangeAddressList;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -108,17 +114,58 @@ public class DeviceService {
             }
 
             Sheet sheet = workbook.createSheet("devices");
-            Row header = sheet.createRow(0);
+
+            // Header style — dark navy background, white bold centered text
+            XSSFCellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFillForegroundColor(new XSSFColor(new byte[]{(byte)0x1F, (byte)0x39, (byte)0x64}, null));
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            XSSFFont headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(new XSSFColor(new byte[]{(byte)0xFF, (byte)0xFF, (byte)0xFF}, null));
+            headerFont.setFontHeightInPoints((short) 11);
+            headerStyle.setFont(headerFont);
+
+            // Example row style — italic, gray text
+            XSSFCellStyle exampleStyle = workbook.createCellStyle();
+            XSSFFont exampleFont = workbook.createFont();
+            exampleFont.setItalic(true);
+            exampleFont.setColor(new XSSFColor(new byte[]{(byte)0x80, (byte)0x80, (byte)0x80}, null));
+            exampleStyle.setFont(exampleFont);
+
+            // Alternating row style — light blue background
+            XSSFCellStyle bandStyle = workbook.createCellStyle();
+            bandStyle.setFillForegroundColor(new XSSFColor(new byte[]{(byte)0xDD, (byte)0xE8, (byte)0xF5}, null));
+            bandStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
             String[] headers = {"Tag Number", "Model", "Serial Number", "Device Type", "Status", "Branch Name"};
-            CellStyle headerStyle = workbook.createCellStyle();
-            Font font = workbook.createFont();
-            font.setBold(true);
-            headerStyle.setFont(font);
+            int[] colWidths = {4500, 6000, 5500, 4500, 4500, 5000};
+
+            Row header = sheet.createRow(0);
+            header.setHeightInPoints(18);
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(headers[i]);
                 cell.setCellStyle(headerStyle);
-                sheet.setColumnWidth(i, 5000);
+                sheet.setColumnWidth(i, colWidths[i]);
+            }
+
+            // Example data row
+            String[] example = {"EUCL-0001", "Dell Latitude 5440", "SN-DL5440-001", "Laptop", "ACTIVE", "HQ"};
+            Row exRow = sheet.createRow(1);
+            for (int i = 0; i < example.length; i++) {
+                Cell cell = exRow.createCell(i);
+                cell.setCellValue(example[i]);
+                cell.setCellStyle(exampleStyle);
+            }
+
+            // Apply alternating banding to remaining rows (2-1000)
+            for (int r = 2; r <= 1000; r++) {
+                if (r % 2 == 0) {
+                    Row row = sheet.createRow(r);
+                    for (int c = 0; c < headers.length; c++) row.createCell(c).setCellStyle(bandStyle);
+                }
             }
 
             DataValidationHelper dvHelper = sheet.getDataValidationHelper();
@@ -127,7 +174,7 @@ public class DeviceService {
             if (!branches.isEmpty()) {
                 String branchFormula = "_ref!$A$1:$A$" + branches.size();
                 DataValidationConstraint branchConstraint = dvHelper.createFormulaListConstraint(branchFormula);
-                DataValidation branchValidation = dvHelper.createValidation(branchConstraint, new CellRangeAddressList(1, 1000, 5, 5));
+                DataValidation branchValidation = dvHelper.createValidation(branchConstraint, new CellRangeAddressList(2, 1000, 5, 5));
                 branchValidation.setShowErrorBox(true);
                 sheet.addValidationData(branchValidation);
             }
@@ -135,7 +182,7 @@ public class DeviceService {
             // Status dropdown (col 4) rows 2-1001
             String statusFormula = "_ref!$B$1:$B$" + statuses.length;
             DataValidationConstraint statusConstraint = dvHelper.createFormulaListConstraint(statusFormula);
-            DataValidation statusValidation = dvHelper.createValidation(statusConstraint, new CellRangeAddressList(1, 1000, 4, 4));
+            DataValidation statusValidation = dvHelper.createValidation(statusConstraint, new CellRangeAddressList(2, 1000, 4, 4));
             statusValidation.setShowErrorBox(true);
             sheet.addValidationData(statusValidation);
 
@@ -150,18 +197,38 @@ public class DeviceService {
         Set<String> seenSerials = new HashSet<>();
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
+            Sheet sheet = workbook.getSheet("devices");
+            if (sheet == null) sheet = workbook.getSheetAt(0);
+            // Build header index map (case-insensitive, ignore spaces/underscores)
+            Row headerRow = sheet.getRow(0);
+            java.util.Map<String, Integer> colIndex = new java.util.HashMap<>();
+            if (headerRow != null) {
+                for (Cell cell : headerRow) {
+                    String n = ExcelUtils.getString(headerRow, cell.getColumnIndex());
+                    if (n != null) colIndex.put(n.toLowerCase().replaceAll("[\\s_]+", ""), cell.getColumnIndex());
+                }
+            }
+            int idxTag    = colIndex.getOrDefault("tagnumber", 0);
+            int idxModel  = colIndex.getOrDefault("model", 1);
+            int idxSerial = colIndex.getOrDefault("serialnumber", 2);
+            int idxType   = colIndex.getOrDefault("devicetype", 3);
+            int idxStatus = colIndex.getOrDefault("status", 4);
+            int idxBranch = colIndex.getOrDefault("branchname", 5);
+
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (ExcelUtils.isRowEmpty(row)) continue;
                 int rowNum = i + 1;
 
-                String tagNumber   = ExcelUtils.getString(row, 0);
-                String model       = ExcelUtils.getString(row, 1);
-                String serialNumber = ExcelUtils.getString(row, 2);
-                String deviceType  = ExcelUtils.getString(row, 3);
-                String statusStr   = ExcelUtils.getString(row, 4);
-                String branchName  = ExcelUtils.getString(row, 5);
+                String tagNumber    = ExcelUtils.getString(row, idxTag);
+                String model        = ExcelUtils.getString(row, idxModel);
+                String serialNumber = ExcelUtils.getString(row, idxSerial);
+                String deviceType   = ExcelUtils.getString(row, idxType);
+                String statusStr    = ExcelUtils.getString(row, idxStatus);
+                String branchName   = ExcelUtils.getString(row, idxBranch);
+
+                // Skip example row
+                if ("EUCL-0001".equalsIgnoreCase(tagNumber) && "SN-DL5440-001".equalsIgnoreCase(serialNumber)) continue;
 
                 if (tagNumber == null)    { result.addFailure(rowNum, "Tag Number is required"); continue; }
                 if (model == null)        { result.addFailure(rowNum, "Model is required"); continue; }

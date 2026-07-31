@@ -5,6 +5,7 @@ import * as branchesApi from '../../api/branches'
 import * as departmentsApi from '../../api/departments'
 import Pagination from '../../components/Pagination'
 import BulkImportModal from '../../components/BulkImportModal'
+import ComboBox from '../../components/ComboBox'
 
 const PAGE_SIZE = 8
 
@@ -185,31 +186,23 @@ export default function EmployeesPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                                <select
+                                <ComboBox
                                     required
                                     value={form.departmentId}
-                                    onChange={e => field('departmentId', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">Select department</option>
-                                    {departments.map(d => (
-                                        <option key={d.id} value={d.id}>{d.name}</option>
-                                    ))}
-                                </select>
+                                    onChange={v => field('departmentId', v)}
+                                    options={departments.map(d => ({ value: d.id, label: d.name }))}
+                                    placeholder="Search department..."
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-                                <select
+                                <ComboBox
                                     required
                                     value={form.branchId}
-                                    onChange={e => field('branchId', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">Select branch</option>
-                                    {branches.map(b => (
-                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                    ))}
-                                </select>
+                                    onChange={v => field('branchId', v)}
+                                    options={branches.map(b => ({ value: b.id, label: b.name }))}
+                                    placeholder="Search branch..."
+                                />
                             </div>
                             {error && <p className="text-red-500 text-sm">{error}</p>}
                             <div className="flex justify-end gap-3 pt-2">

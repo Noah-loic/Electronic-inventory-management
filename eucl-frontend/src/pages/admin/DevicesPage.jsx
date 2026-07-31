@@ -4,6 +4,7 @@ import devicesApi from '../../api/devices'
 import * as branchesApi from '../../api/branches'
 import Pagination from '../../components/Pagination'
 import BulkImportModal from '../../components/BulkImportModal'
+import ComboBox from '../../components/ComboBox'
 
 const PAGE_SIZE = 8
 
@@ -20,7 +21,8 @@ const empty = { tagNumber: '', model: '', serialNumber: '', deviceType: '', stat
 
 export default function DevicesPage() {
     const { auth } = useAuth()
-    const canEdit = auth?.permissions?.includes('DEVICE_CREATE') || auth?.permissions?.includes('DEVICE_UPDATE')
+    const canUpdate = auth?.permissions?.includes('DEVICE_UPDATE')
+    const canEdit = auth?.permissions?.includes('DEVICE_CREATE') || canUpdate
     const canDelete = auth?.permissions?.includes('DEVICE_DELETE')
     const [devices, setDevices] = useState([])
     const [branches, setBranches] = useState([])
@@ -31,6 +33,14 @@ export default function DevicesPage() {
     const [deleteId, setDeleteId] = useState(null)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
+    const [statusModal, setStatusModal] = useState(false)
+    const [statusDevice, setStatusDevice] = useState(null)
+    const [statusForm, setStatusForm] = useState({ newStatus: '', reason: '' })
+    const [statusSaving, setStatusSaving] = useState(false)
+    const [statusError, setStatusError] = useState('')
+    const [historyModal, setHistoryModal] = useState(false)
+    const [historyEntries, setHistoryEntries] = useState([])
+    const [historyLoading, setHistoryLoading] = useState(false)
     const [filterStatus, setFilterStatus] = useState('ALL')
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
@@ -60,12 +70,45 @@ export default function DevicesPage() {
             model: dev.model,
             serialNumber: dev.serialNumber,
             deviceType: dev.deviceType,
-            status: dev.status,
             branchId: dev.branch?.id ?? '',
         })
         setEditId(dev.id)
         setError('')
         setModal(true)
+    }
+
+    const closeStatusModal = () => {
+        setStatusModal(false)
+        setStatusDevice(null)
+        setStatusForm({ newStatus: '', reason: '' })
+        setStatusError('')
+    }
+
+    const openStatusModal = (dev) => {
+        const otherStatuses = STATUSES.filter(s => s !== dev.status)
+        setStatusDevice(dev)
+        setStatusForm({ newStatus: otherStatuses[0] ?? '', reason: '' })
+        setStatusError('')
+        setStatusModal(true)
+    }
+
+    const closeHistoryModal = () => {
+        setHistoryModal(false)
+        setHistoryEntries([])
+    }
+
+    const openHistoryModal = async (dev) => {
+        setHistoryLoading(true)
+        setHistoryEntries([])
+        setHistoryModal(true)
+        try {
+            const res = await devicesApi.getStatusHistory(dev.id)
+            setHistoryEntries(Array.isArray(res.data) ? res.data : [])
+        } catch {
+            setHistoryEntries([])
+        } finally {
+            setHistoryLoading(false)
+        }
     }
 
     const closeModal = () => { setModal(false); setForm(empty); setEditId(null); setError('') }
@@ -76,8 +119,12 @@ export default function DevicesPage() {
         setSaving(true)
         try {
             const payload = { ...form, branchId: Number(form.branchId) }
-            if (editId) await devicesApi.update(editId, payload)
-            else await devicesApi.create(payload)
+            if (editId) {
+                const { status, ...updatePayload } = payload
+                await devicesApi.update(editId, updatePayload)
+            } else {
+                await devicesApi.create(payload)
+            }
             closeModal()
             await fetchAll()
         } catch (err) {
@@ -92,7 +139,27 @@ export default function DevicesPage() {
         finally { setDeleteId(null) }
     }
 
+    const handleStatusSubmit = async (e) => {
+        e.preventDefault()
+        setStatusError('')
+        setStatusSaving(true)
+        try {
+            await devicesApi.changeStatus(statusDevice.id, {
+                newStatus: statusForm.newStatus,
+                reason: statusForm.reason,
+                changedById: auth.id,
+            })
+            closeStatusModal()
+            await fetchAll()
+        } catch (err) {
+            setStatusError(err.response?.data?.message || 'Something went wrong')
+        } finally {
+            setStatusSaving(false)
+        }
+    }
+
     const field = (key, value) => setForm(f => ({ ...f, [key]: value }))
+    const statusField = (key, value) => setStatusForm(f => ({ ...f, [key]: value }))
 
     const filtered = devices
         .filter(d => filterStatus === 'ALL' || d.status === filterStatus)
@@ -102,6 +169,7 @@ export default function DevicesPage() {
         })
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
     const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    const statusOptions = statusDevice ? STATUSES.filter(s => s !== statusDevice.status).map(s => ({ value: s, label: s.replace('_', ' ') })) : []
 
     return (
         <div>
@@ -190,6 +258,8 @@ export default function DevicesPage() {
                                     <td className="px-6 py-4 text-gray-500">{dev.branch?.name ?? '—'}</td>
                                     <td className="px-6 py-4 text-right space-x-3">
                                         {canEdit && <button onClick={() => openEdit(dev)} className="text-blue-600 hover:text-blue-800 font-medium transition">Edit</button>}
+                                        {canUpdate && <button onClick={() => openStatusModal(dev)} className="text-orange-600 hover:text-orange-800 font-medium transition">Change Status</button>}
+                                        {canUpdate && <button onClick={() => openHistoryModal(dev)} className="text-indigo-600 hover:text-indigo-800 font-medium transition">History</button>}
                                         {canDelete && <button onClick={() => setDeleteId(dev.id)} className="text-red-500 hover:text-red-700 font-medium transition">Delete</button>}
                                     </td>
                                 </tr>
@@ -252,16 +322,18 @@ export default function DevicesPage() {
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                                    <select
-                                        value={form.status}
-                                        onChange={e => field('status', e.target.value)}
-                                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        {STATUSES.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-                                    </select>
-                                </div>
+                                {!editId ? (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                        <select
+                                            value={form.status}
+                                            onChange={e => field('status', e.target.value)}
+                                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {STATUSES.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                                        </select>
+                                    </div>
+                                ) : null}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
                                     <input
@@ -295,6 +367,89 @@ export default function DevicesPage() {
                 uploadFile={devicesApi.bulkImport}
                 onImported={fetchAll}
             />
+
+            {/* Change Status Modal */}
+            {statusModal && statusDevice && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                        <h2 className="text-lg font-bold text-gray-800 mb-4">Change Device Status</h2>
+                        <form onSubmit={handleStatusSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
+                                <input
+                                    readOnly
+                                    value={statusDevice.status.replace('_', ' ')}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                                <ComboBox
+                                    required
+                                    value={statusForm.newStatus}
+                                    onChange={v => statusField('newStatus', v)}
+                                    options={statusOptions}
+                                    placeholder="Select new status..."
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                                <textarea
+                                    required
+                                    value={statusForm.reason}
+                                    onChange={e => statusField('reason', e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px]"
+                                    placeholder="Enter a reason for the status change"
+                                />
+                            </div>
+                            {statusError && <p className="text-red-500 text-sm">{statusError}</p>}
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button type="button" onClick={closeStatusModal} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition">Cancel</button>
+                                <button
+                                    type="submit"
+                                    disabled={statusSaving}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50"
+                                >
+                                    {statusSaving ? 'Saving...' : 'Update Status'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Status History Modal */}
+            {historyModal && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6">
+                        <div className="flex items-start justify-between gap-4 mb-4">
+                            <div>
+                                <h2 className="text-lg font-bold text-gray-800">Status History</h2>
+                                <p className="text-sm text-gray-500">Most recent status changes first.</p>
+                            </div>
+                            <button onClick={closeHistoryModal} className="text-gray-500 hover:text-gray-800 text-sm">Close</button>
+                        </div>
+                        {historyLoading ? (
+                            <div className="p-8 text-center text-gray-400 text-sm">Loading history...</div>
+                        ) : historyEntries.length === 0 ? (
+                            <div className="p-8 text-center text-gray-400 text-sm">No history entries found.</div>
+                        ) : (
+                            <div className="space-y-4">
+                                {historyEntries.map(entry => (
+                                    <div key={entry.id} className="border border-gray-200 rounded-2xl p-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                                            <span className="text-sm font-medium text-gray-700">{entry.oldStatus.replace('_', ' ')} → {entry.newStatus.replace('_', ' ')}</span>
+                                            <span className="text-xs text-gray-500">{new Date(entry.changedAt).toLocaleString()}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mb-2">Reason: {entry.reason}</p>
+                                        <p className="text-sm text-gray-500">Changed by: {entry.changedBy?.username ?? entry.changedBy?.employee?.name ?? 'Unknown'}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation */}
             {deleteId && (

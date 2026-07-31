@@ -10,6 +10,7 @@ const navLinks = [
     { to: '/admin/devices',          label: 'Devices' },
     { to: '/admin/assignments',      label: 'Assignments' },
     { to: '/admin/repair-requests',  label: 'Repair Requests' },
+    { to: '/admin/audit',            label: 'Audit Report' },
     { to: '/admin/users',            label: 'Users & Permissions' },
 ]
 

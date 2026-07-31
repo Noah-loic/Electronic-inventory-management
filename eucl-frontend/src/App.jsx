@@ -12,6 +12,7 @@ import UsersPage from './pages/admin/UsersPage'
 import DevicesPage from './pages/admin/DevicesPage'
 import AssignmentsPage from './pages/admin/AssignmentsPage'
 import RepairRequestsPage from './pages/admin/RepairRequestsPage'
+import AuditPage from './pages/admin/AuditPage'
 import IctDashboardPage from './pages/ict/IctDashboardPage'
 import BranchLayout from './layouts/BranchLayout'
 import BranchDashboardPage from './pages/branch/BranchDashboardPage'
@@ -45,6 +46,7 @@ export default function App() {
                         <Route path="devices" element={<DevicesPage />} />
                         <Route path="assignments" element={<AssignmentsPage />} />
                         <Route path="repair-requests" element={<RepairRequestsPage />} />
+                        <Route path="audit" element={<AuditPage />} />
                         <Route path="users" element={<UsersPage />} />
                     </Route>
 

@@ -11,14 +11,18 @@ export function AuthProvider({ children }) {
     })
 
     const login = (data) => {
+        const roles = Array.isArray(data.roleNames)
+            ? data.roleNames
+            : Array.from(data.roleNames ?? [])
+
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify({
             id: data.id,
             username: data.username,
-            role: data.role,
+            roles,
             permissions: data.permissions,
         }))
-        setAuth(data)
+        setAuth({ ...data, roles })
     }
 
     const logout = () => {
@@ -34,13 +38,13 @@ export function AuthProvider({ children }) {
             const updated = {
                 ...auth,
                 permissions: data.permissions ?? [],
-                role: data.role,
+                roles: Array.isArray(data.roles) ? data.roles.map(r => r.name) : [],
                 username: data.username,
             }
             localStorage.setItem('user', JSON.stringify({
                 id: updated.id,
                 username: updated.username,
-                role: updated.role,
+                roles: updated.roles,
                 permissions: updated.permissions,
             }))
             setAuth(updated)

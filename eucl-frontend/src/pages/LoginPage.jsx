@@ -17,8 +17,11 @@ export default function LoginPage() {
         try {
             const { data } = await axiosInstance.post('/auth/login', form)
             login(data)
-            const roleRoutes = { ADMIN: '/admin/dashboard', ICT_STAFF: '/ict/dashboard', BRANCH_MANAGER: '/branch/dashboard' }
-            navigate(roleRoutes[data.role] ?? '/login')
+            const roles = Array.isArray(data.roleNames) ? data.roleNames : Array.from(data.roleNames ?? [])
+            if (roles.includes('ADMIN')) navigate('/admin/dashboard')
+            else if (roles.includes('ICT_STAFF')) navigate('/ict/dashboard')
+            else if (roles.includes('BRANCH_MANAGER')) navigate('/branch/dashboard')
+            else navigate('/login')
         } catch {
             setError('Invalid username or password')
         } finally {

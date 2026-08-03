@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
     if (!auth) return <Navigate to="/login" replace />
 
-    if (allowedRoles && !allowedRoles.includes(auth.role))
+    if (allowedRoles && !allowedRoles.some(r => auth.roles?.includes(r)))
         return <Navigate to="/unauthorized" replace />
 
     return children

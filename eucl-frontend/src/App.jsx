@@ -9,6 +9,7 @@ import BranchesPage from './pages/admin/BranchesPage'
 import DepartmentsPage from './pages/admin/DepartmentsPage'
 import EmployeesPage from './pages/admin/EmployeesPage'
 import UsersPage from './pages/admin/UsersPage'
+import RolesPage from './pages/admin/RolesPage'
 import DevicesPage from './pages/admin/DevicesPage'
 import AssignmentsPage from './pages/admin/AssignmentsPage'
 import RepairRequestsPage from './pages/admin/RepairRequestsPage'
@@ -48,6 +49,7 @@ export default function App() {
                         <Route path="repair-requests" element={<RepairRequestsPage />} />
                         <Route path="audit" element={<AuditPage />} />
                         <Route path="users" element={<UsersPage />} />
+                        <Route path="roles" element={<RolesPage />} />
                     </Route>
 
                     {/* ICT Staff routes */}

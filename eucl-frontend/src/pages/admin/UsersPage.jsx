@@ -1,43 +1,14 @@
 import { useEffect, useState } from 'react'
 import usersApi from '../../api/users'
 import employeesApi from '../../api/employees'
+import rolesApi from '../../api/roles'
 import Pagination from '../../components/Pagination'
 import ComboBox from '../../components/ComboBox'
+import { ALL_PERMISSIONS } from '../../constants/permissions'
 
 const PAGE_SIZE = 8
 
-const ALL_PERMISSIONS = {
-    Device:      ['DEVICE_CREATE', 'DEVICE_READ', 'DEVICE_UPDATE', 'DEVICE_DELETE'],
-    Employee:    ['EMPLOYEE_CREATE', 'EMPLOYEE_READ', 'EMPLOYEE_UPDATE', 'EMPLOYEE_DELETE'],
-    Branch:      ['BRANCH_CREATE', 'BRANCH_READ', 'BRANCH_UPDATE', 'BRANCH_DELETE'],
-    Department:  ['DEPARTMENT_CREATE', 'DEPARTMENT_READ', 'DEPARTMENT_UPDATE', 'DEPARTMENT_DELETE'],
-    Assignment:  ['ASSIGNMENT_CREATE', 'ASSIGNMENT_READ'],
-    'Repair Request': ['REPAIR_REQUEST_CREATE', 'REPAIR_REQUEST_READ', 'REPAIR_REQUEST_UPDATE'],
-    Report:      ['REPORT_READ'],
-    User:        ['USER_CREATE', 'USER_READ', 'USER_UPDATE', 'USER_DELETE'],
-}
-
-const ROLES = ['ADMIN', 'ICT_STAFF', 'BRANCH_MANAGER']
-
-const ALL_PERMS_FLAT = Object.values(ALL_PERMISSIONS).flat()
-
-const ROLE_DEFAULTS = {
-    ADMIN: new Set(ALL_PERMS_FLAT),
-    ICT_STAFF: new Set([
-        'DEVICE_CREATE', 'DEVICE_READ', 'DEVICE_UPDATE',
-        'EMPLOYEE_READ', 'BRANCH_READ', 'DEPARTMENT_READ',
-        'ASSIGNMENT_CREATE', 'ASSIGNMENT_READ',
-        'REPAIR_REQUEST_READ', 'REPAIR_REQUEST_UPDATE',
-        'REPORT_READ',
-    ]),
-    BRANCH_MANAGER: new Set([
-        'BRANCH_READ',
-        'REPAIR_REQUEST_CREATE', 'REPAIR_REQUEST_READ',
-        'REPORT_READ',
-    ]),
-}
-
-const empty = { username: '', password: '', role: '', employeeId: '' }
+const empty = { username: '', password: '', employeeId: '' }
 
 const roleBadge = {
     ADMIN: 'bg-purple-100 text-purple-700',
@@ -48,10 +19,12 @@ const roleBadge = {
 export default function UsersPage() {
     const [users, setUsers] = useState([])
     const [employees, setEmployees] = useState([])
+    const [roles, setRoles] = useState([])
     const [loading, setLoading] = useState(true)
     const [modal, setModal] = useState(false)
     const [form, setForm] = useState(empty)
     const [selectedPerms, setSelectedPerms] = useState(new Set())
+    const [selectedRoleIds, setSelectedRoleIds] = useState(new Set())
     const [editId, setEditId] = useState(null)
     const [deleteId, setDeleteId] = useState(null)
     const [saving, setSaving] = useState(false)
@@ -60,11 +33,14 @@ export default function UsersPage() {
 
     const fetchAll = async () => {
         try {
-            const [uRes, eRes] = await Promise.all([usersApi.getAll(), employeesApi.getAll()])
+            const [uRes, eRes, rRes] = await Promise.all([usersApi.getAll(), employeesApi.getAll(), rolesApi.getAll()])
             setUsers(Array.isArray(uRes.data) ? uRes.data : [])
             setEmployees(Array.isArray(eRes.data) ? eRes.data : [])
+            setRoles(Array.isArray(rRes.data) ? rRes.data : [])
         } catch {
             setUsers([])
+            setEmployees([])
+            setRoles([])
         } finally {
             setLoading(false)
         }
@@ -75,6 +51,7 @@ export default function UsersPage() {
     const openAdd = () => {
         setForm(empty)
         setSelectedPerms(new Set())
+        setSelectedRoleIds(new Set())
         setEditId(null)
         setError('')
         setModal(true)
@@ -84,16 +61,17 @@ export default function UsersPage() {
         setForm({
             username: user.username,
             password: '',
-            role: user.role,
             employeeId: user.employee?.id ?? '',
         })
+        const roleIds = new Set((user.roles ?? []).map(r => r.id))
+        setSelectedRoleIds(roleIds)
         setSelectedPerms(new Set(user.permissions ?? []))
         setEditId(user.id)
         setError('')
         setModal(true)
     }
 
-    const closeModal = () => { setModal(false); setForm(empty); setSelectedPerms(new Set()); setEditId(null); setError('') }
+    const closeModal = () => { setModal(false); setForm(empty); setSelectedPerms(new Set()); setSelectedRoleIds(new Set()); setEditId(null); setError('') }
 
     const togglePerm = (perm) => {
         setSelectedPerms(prev => {
@@ -117,7 +95,7 @@ export default function UsersPage() {
         setError('')
         setSaving(true)
         try {
-            const payload = { ...form, employeeId: Number(form.employeeId) }
+            const payload = { ...form, employeeId: Number(form.employeeId), roleIds: [...selectedRoleIds] }
             if (!editId && !payload.password) { setError('Password is required'); setSaving(false); return }
 
             let userId = editId
@@ -145,6 +123,27 @@ export default function UsersPage() {
     }
 
     const field = (key, value) => setForm(f => ({ ...f, [key]: value }))
+
+    const toggleRole = (roleId) => {
+        setSelectedRoleIds(prev => {
+            const next = new Set(prev)
+            next.has(roleId) ? next.delete(roleId) : next.add(roleId)
+            return next
+        })
+    }
+
+    useEffect(() => {
+        if (selectedRoleIds.size === 0) {
+            setSelectedPerms(new Set())
+            return
+        }
+
+        const union = roles
+            .filter(role => selectedRoleIds.has(role.id))
+            .flatMap(role => role.permissions ?? [])
+
+        setSelectedPerms(new Set(union))
+    }, [selectedRoleIds, roles])
 
     return (
         <div>
@@ -186,9 +185,13 @@ export default function UsersPage() {
                                     <td className="px-6 py-4 font-medium text-gray-800">{user.username}</td>
                                     <td className="px-6 py-4 text-gray-500">{user.employee?.name ?? '—'}</td>
                                     <td className="px-6 py-4">
-                                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${roleBadge[user.role] ?? 'bg-gray-100 text-gray-600'}`}>
-                                            {user.role}
-                                        </span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {(user.roles ?? []).map(role => {
+                                                const base = roleBadge[role.name] ?? 'bg-gray-100 text-gray-600'
+                                                return <span key={role.id ?? role.name} className={`text-xs font-semibold px-2.5 py-1 rounded-full ${base}`}>{role.name}</span>
+                                            })}
+                                            {(user.roles ?? []).length === 0 && <span className="text-xs text-gray-400">No roles</span>}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-gray-400 text-xs">{user.permissions?.length ?? 0} permissions</td>
                                     <td className="px-6 py-4 text-right space-x-3">
@@ -241,21 +244,20 @@ export default function UsersPage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                                        <select
-                                            required
-                                            value={form.role}
-                                            onChange={e => {
-                                                field('role', e.target.value)
-                                                if (ROLE_DEFAULTS[e.target.value]) {
-                                                    setSelectedPerms(new Set(ROLE_DEFAULTS[e.target.value]))
-                                                }
-                                            }}
-                                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Select role</option>
-                                            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                                        </select>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Roles</label>
+                                        <div className="border border-gray-300 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+                                            {roles.map(role => (
+                                                <label key={role.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedRoleIds.has(role.id)}
+                                                        onChange={() => toggleRole(role.id)}
+                                                        className="w-4 h-4 accent-blue-600"
+                                                    />
+                                                    <span>{role.name}</span>
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>

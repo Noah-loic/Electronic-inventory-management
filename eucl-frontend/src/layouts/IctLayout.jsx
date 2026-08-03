@@ -55,7 +55,7 @@ export default function IctLayout() {
                     <h2 className="text-sm text-gray-500">ICT Staff Portal</h2>
                     <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-700 font-medium">{auth?.username}</span>
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">{auth?.role}</span>
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">{auth?.roles?.join(', ')}</span>
                         <button onClick={handleLogout} className="text-sm text-red-500 hover:text-red-700 transition">Logout</button>
                     </div>
                 </header>

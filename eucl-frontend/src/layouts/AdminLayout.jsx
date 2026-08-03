@@ -12,6 +12,7 @@ const navLinks = [
     { to: '/admin/repair-requests',  label: 'Repair Requests' },
     { to: '/admin/audit',            label: 'Audit Report' },
     { to: '/admin/users',            label: 'Users & Permissions' },
+    { to: '/admin/roles',            label: 'Roles' },
 ]
 
 export default function AdminLayout() {
@@ -75,7 +76,7 @@ export default function AdminLayout() {
                     </h2>
                     <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-700 font-medium">{auth?.username}</span>
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">{auth?.role}</span>
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">{auth?.roles?.join(', ')}</span>
                         <button
                             onClick={handleLogout}
                             className="text-sm text-red-500 hover:text-red-700 transition"

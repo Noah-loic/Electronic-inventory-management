@@ -1,7 +1,7 @@
 package com.example.EUCL.entity;
 
+import com.example.EUCL.entity.Role;
 import com.example.EUCL.enums.Permission;
-import com.example.EUCL.enums.UserRole;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -31,13 +31,17 @@ public class AppUser {
     @Column(nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserRole role;
-
     @OneToOne
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_role",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_permission", joinColumns = @JoinColumn(name = "user_id"))

@@ -12,8 +12,8 @@ import com.example.EUCL.entity.AppUser;
 import com.example.EUCL.entity.DeviceStatusHistory;
 import com.example.EUCL.entity.RepairRequest;
 import com.example.EUCL.enums.DeviceStatus;
+import com.example.EUCL.enums.Permission;
 import com.example.EUCL.enums.RepairStatus;
-import com.example.EUCL.enums.UserRole;
 import com.example.EUCL.repository.AppUserRepository;
 import com.example.EUCL.repository.DeviceAssignmentRepository;
 import com.example.EUCL.repository.DeviceRepository;
@@ -38,8 +38,8 @@ public class RepairRequestService {
         AppUser requestedBy = appUserRepository.findById(dto.getRequestedById())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + dto.getRequestedById()));
 
-        if (requestedBy.getRole() != UserRole.BRANCH_MANAGER && requestedBy.getRole() != UserRole.ADMIN)
-            throw new IllegalArgumentException("Only branch managers or admins can submit repair requests");
+        if (!requestedBy.getPermissions().contains(Permission.REPAIR_REQUEST_CREATE))
+            throw new IllegalArgumentException("Only users with REPAIR_REQUEST_CREATE permission can submit repair requests");
 
         RepairRequest request = new RepairRequest();
         request.setDevice(deviceRepository.findById(dto.getDeviceId())
@@ -58,8 +58,8 @@ public class RepairRequestService {
         AppUser handledBy = appUserRepository.findById(dto.getHandledById())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + dto.getHandledById()));
 
-        if (handledBy.getRole() != UserRole.ICT_STAFF && handledBy.getRole() != UserRole.ADMIN)
-            throw new IllegalArgumentException("Only ICT staff or admins can update repair request status");
+        if (!handledBy.getPermissions().contains(Permission.REPAIR_REQUEST_UPDATE))
+            throw new IllegalArgumentException("Only users with REPAIR_REQUEST_UPDATE permission can update repair request status");
 
         RepairStatus newStatus = dto.getNewStatus();
         var device = request.getDevice();

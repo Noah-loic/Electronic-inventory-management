@@ -1,7 +1,6 @@
 package com.example.EUCL.dto;
 
 import com.example.EUCL.enums.Permission;
-import com.example.EUCL.enums.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,6 +12,6 @@ public class LoginResponse {
     private String token;
     private Long id;
     private String username;
-    private UserRole role;
+    private Set<String> roleNames;
     private Set<Permission> permissions;
 }

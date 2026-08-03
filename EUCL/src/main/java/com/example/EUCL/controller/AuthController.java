@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -19,7 +22,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
 
     @Data
-    static class LoginRequest {
+    public static class LoginRequest {
         private String username;
         private String password;
     }
@@ -33,6 +36,9 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
 
         String token = jwtUtil.generateToken(user.getUsername());
-        return new LoginResponse(token, user.getId(), user.getUsername(), user.getRole(), user.getPermissions());
+        Set<String> roleNames = user.getRoles().stream()
+                .map(role -> role.getName())
+                .collect(Collectors.toSet());
+        return new LoginResponse(token, user.getId(), user.getUsername(), roleNames, user.getPermissions());
     }
 }

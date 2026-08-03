@@ -47,18 +47,13 @@ export default function RepairRequestsPage({ branchOnly = false, useTagInput = f
     const [updateError, setUpdateError] = useState('')
 
     const fetchAll = async () => {
-        try {
-            const [rRes, dRes] = await Promise.all([
-                branchOnly ? repairRequestsApi.getByBranch(auth.id) : repairRequestsApi.getAll(),
-                devicesApi.getAll(),
-            ])
-            setRequests(Array.isArray(rRes.data) ? rRes.data : [])
-            setDevices(Array.isArray(dRes.data) ? dRes.data : [])
-        } catch {
-            setRequests([])
-        } finally {
-            setLoading(false)
-        }
+        const [rRes, dRes] = await Promise.allSettled([
+            branchOnly ? repairRequestsApi.getByBranch(auth.id) : repairRequestsApi.getAll(),
+            devicesApi.getAll(),
+        ])
+        setRequests(rRes.status === 'fulfilled' && Array.isArray(rRes.value.data) ? rRes.value.data : [])
+        setDevices(dRes.status === 'fulfilled' && Array.isArray(dRes.value.data) ? dRes.value.data : [])
+        setLoading(false)
     }
 
     useEffect(() => { fetchAll() }, [])

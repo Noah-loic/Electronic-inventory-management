@@ -29,20 +29,15 @@ export default function EmployeesPage() {
     const [bulkModal, setBulkModal] = useState(false)
 
     const fetchAll = async () => {
-        try {
-            const [empRes, brRes, deptRes] = await Promise.all([
-                employeesApi.getAll(),
-                branchesApi.getAll(),
-                departmentsApi.getAll(),
-            ])
-            setEmployees(Array.isArray(empRes.data) ? empRes.data : [])
-            setBranches(Array.isArray(brRes.data) ? brRes.data : [])
-            setDepartments(Array.isArray(deptRes.data) ? deptRes.data : [])
-        } catch {
-            setEmployees([])
-        } finally {
-            setLoading(false)
-        }
+        const [empRes, brRes, deptRes] = await Promise.allSettled([
+            employeesApi.getAll(),
+            branchesApi.getAll(),
+            departmentsApi.getAll(),
+        ])
+        setEmployees(empRes.status === 'fulfilled' && Array.isArray(empRes.value.data) ? empRes.value.data : [])
+        setBranches(brRes.status === 'fulfilled' && Array.isArray(brRes.value.data) ? brRes.value.data : [])
+        setDepartments(deptRes.status === 'fulfilled' && Array.isArray(deptRes.value.data) ? deptRes.value.data : [])
+        setLoading(false)
     }
 
     useEffect(() => { fetchAll() }, [])

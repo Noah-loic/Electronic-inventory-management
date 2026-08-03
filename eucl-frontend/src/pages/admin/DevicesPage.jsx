@@ -49,15 +49,10 @@ export default function DevicesPage() {
     const hqBranch = branches.find(b => /head(quarter)?|hq/i.test(b.name)) ?? branches[0] ?? null
 
     const fetchAll = async () => {
-        try {
-            const [dRes, bRes] = await Promise.all([devicesApi.getAll(), branchesApi.getAll()])
-            setDevices(Array.isArray(dRes.data) ? dRes.data : [])
-            setBranches(Array.isArray(bRes.data) ? bRes.data : [])
-        } catch {
-            setDevices([])
-        } finally {
-            setLoading(false)
-        }
+        const [dRes, bRes] = await Promise.allSettled([devicesApi.getAll(), branchesApi.getAll()])
+        setDevices(dRes.status === 'fulfilled' && Array.isArray(dRes.value.data) ? dRes.value.data : [])
+        setBranches(bRes.status === 'fulfilled' && Array.isArray(bRes.value.data) ? bRes.value.data : [])
+        setLoading(false)
     }
 
     useEffect(() => { fetchAll() }, [])

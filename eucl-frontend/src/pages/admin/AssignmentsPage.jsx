@@ -31,22 +31,17 @@ export default function AssignmentsPage() {
     const [page, setPage] = useState(1)
 
     const fetchAll = async () => {
-        try {
-            const [aRes, dRes, eRes, bRes] = await Promise.all([
-                assignmentsApi.getAll(),
-                devicesApi.getAll(),
-                employeesApi.getAll(),
-                branchesApi.getAll(),
-            ])
-            setAssignments(Array.isArray(aRes.data) ? aRes.data : [])
-            setDevices(Array.isArray(dRes.data) ? dRes.data : [])
-            setEmployees(Array.isArray(eRes.data) ? eRes.data : [])
-            setBranches(Array.isArray(bRes.data) ? bRes.data : [])
-        } catch {
-            setAssignments([])
-        } finally {
-            setLoading(false)
-        }
+        const [aRes, dRes, eRes, bRes] = await Promise.allSettled([
+            assignmentsApi.getAll(),
+            devicesApi.getAll(),
+            employeesApi.getAll(),
+            branchesApi.getAll(),
+        ])
+        setAssignments(aRes.status === 'fulfilled' && Array.isArray(aRes.value.data) ? aRes.value.data : [])
+        setDevices(dRes.status === 'fulfilled' && Array.isArray(dRes.value.data) ? dRes.value.data : [])
+        setEmployees(eRes.status === 'fulfilled' && Array.isArray(eRes.value.data) ? eRes.value.data : [])
+        setBranches(bRes.status === 'fulfilled' && Array.isArray(bRes.value.data) ? bRes.value.data : [])
+        setLoading(false)
     }
 
     useEffect(() => { fetchAll() }, [])

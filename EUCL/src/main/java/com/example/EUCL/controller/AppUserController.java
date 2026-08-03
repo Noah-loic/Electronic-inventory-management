@@ -45,7 +45,7 @@ public class AppUserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER_READ')")
+    @PreAuthorize("hasAuthority('USER_READ') or authentication.principal.id == #id")
     public AppUser findById(@PathVariable Long id) {
         return appUserService.findById(id);
     }

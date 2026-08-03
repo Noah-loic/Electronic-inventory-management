@@ -66,10 +66,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return EnumSet.allOf(Permission.class);
         }
 
-        if (user.getPermissions() != null) {
-            return user.getPermissions();
+        Set<Permission> effective = new java.util.HashSet<>();
+        if (user.getRoles() != null) {
+            user.getRoles().forEach(role -> {
+                if (role != null && role.getPermissions() != null)
+                    effective.addAll(role.getPermissions());
+            });
         }
-
-        return EnumSet.noneOf(Permission.class);
+        if (user.getPermissions() != null) {
+            effective.addAll(user.getPermissions());
+        }
+        return effective;
     }
 }

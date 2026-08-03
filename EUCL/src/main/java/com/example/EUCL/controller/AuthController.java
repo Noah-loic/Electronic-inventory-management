@@ -46,9 +46,18 @@ public class AuthController {
         Set<String> roleNames = user.getRoles().stream()
                 .map(role -> role.getName())
                 .collect(Collectors.toSet());
-        Set<Permission> effectivePermissions = user.getRoles().stream().anyMatch(role -> role != null && "ADMIN".equalsIgnoreCase(role.getName()))
-                ? EnumSet.allOf(Permission.class)
-                : user.getPermissions();
+        Set<Permission> effectivePermissions;
+        if (user.getRoles().stream().anyMatch(role -> role != null && "ADMIN".equalsIgnoreCase(role.getName()))) {
+            effectivePermissions = EnumSet.allOf(Permission.class);
+        } else {
+            effectivePermissions = new java.util.HashSet<>();
+            user.getRoles().forEach(role -> {
+                if (role != null && role.getPermissions() != null)
+                    effectivePermissions.addAll(role.getPermissions());
+            });
+            if (user.getPermissions() != null)
+                effectivePermissions.addAll(user.getPermissions());
+        }
         return new LoginResponse(token, user.getId(), user.getUsername(), roleNames, effectivePermissions);
     }
 }

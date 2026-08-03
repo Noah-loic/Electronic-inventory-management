@@ -1,14 +1,16 @@
 package com.example.EUCL.config;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import org.springframework.stereotype.Component;
+
 import com.example.EUCL.entity.Role;
 import com.example.EUCL.enums.Permission;
 import com.example.EUCL.repository.RoleRepository;
+
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
-import java.util.EnumSet;
-import java.util.Set;
 
 @Component
 @RequiredArgsConstructor

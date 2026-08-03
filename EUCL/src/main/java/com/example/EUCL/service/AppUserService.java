@@ -1,5 +1,14 @@
 package com.example.EUCL.service;
 
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.EUCL.dto.AppUserRequest;
 import com.example.EUCL.dto.PermissionUpdateRequest;
 import com.example.EUCL.entity.AppUser;
@@ -8,15 +17,9 @@ import com.example.EUCL.enums.Permission;
 import com.example.EUCL.repository.AppUserRepository;
 import com.example.EUCL.repository.EmployeeRepository;
 import com.example.EUCL.repository.RoleRepository;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,9 +38,7 @@ public class AppUserService {
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found with id: " + request.getEmployeeId())));
         Set<Role> roles = resolveRoles(request.getRoleIds());
         user.setRoles(roles);
-        user.setPermissions(roles.stream()
-                .flatMap(role -> role.getPermissions().stream())
-                .collect(Collectors.toSet()));
+        user.setPermissions(computeEffectivePermissions(roles));
         return appUserRepository.save(user);
     }
 
@@ -59,9 +60,7 @@ public class AppUserService {
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found with id: " + request.getEmployeeId())));
         Set<Role> roles = resolveRoles(request.getRoleIds());
         user.setRoles(roles);
-        user.setPermissions(roles.stream()
-                .flatMap(role -> role.getPermissions().stream())
-                .collect(Collectors.toSet()));
+        user.setPermissions(computeEffectivePermissions(roles));
         return appUserRepository.save(user);
     }
 
@@ -73,7 +72,11 @@ public class AppUserService {
     @Transactional
     public AppUser setPermissions(Long id, PermissionUpdateRequest request) {
         AppUser user = findById(id);
-        user.setPermissions(request.getPermissions());
+        if (isAdminUser(user)) {
+            user.setPermissions(EnumSet.allOf(Permission.class));
+        } else {
+            user.setPermissions(request.getPermissions());
+        }
         return appUserRepository.save(user);
     }
 
@@ -81,7 +84,11 @@ public class AppUserService {
     @Transactional
     public AppUser grantPermissions(Long id, PermissionUpdateRequest request) {
         AppUser user = findById(id);
-        user.getPermissions().addAll(request.getPermissions());
+        if (isAdminUser(user)) {
+            user.setPermissions(EnumSet.allOf(Permission.class));
+        } else {
+            user.getPermissions().addAll(request.getPermissions());
+        }
         return appUserRepository.save(user);
     }
 
@@ -89,7 +96,11 @@ public class AppUserService {
     @Transactional
     public AppUser revokePermissions(Long id, PermissionUpdateRequest request) {
         AppUser user = findById(id);
-        user.getPermissions().removeAll(request.getPermissions());
+        if (isAdminUser(user)) {
+            user.setPermissions(EnumSet.allOf(Permission.class));
+        } else {
+            user.getPermissions().removeAll(request.getPermissions());
+        }
         return appUserRepository.save(user);
     }
 
@@ -97,9 +108,7 @@ public class AppUserService {
     @Transactional
     public AppUser resetToRoleDefaults(Long id) {
         AppUser user = findById(id);
-        user.setPermissions(user.getRoles().stream()
-                .flatMap(role -> role.getPermissions().stream())
-                .collect(Collectors.toSet()));
+        user.setPermissions(computeEffectivePermissions(user.getRoles()));
         return appUserRepository.save(user);
     }
 
@@ -115,5 +124,28 @@ public class AppUserService {
                 .map(roleId -> roleRepository.findById(roleId)
                         .orElseThrow(() -> new EntityNotFoundException("Role not found with id: " + roleId)))
                 .collect(Collectors.toSet());
+    }
+
+    private Set<Permission> computeEffectivePermissions(Set<Role> roles) {
+        if (roles == null || roles.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        boolean isAdmin = roles.stream()
+                .anyMatch(role -> role != null && role.getName() != null && role.getName().equalsIgnoreCase("ADMIN"));
+
+        if (isAdmin) {
+            return EnumSet.allOf(Permission.class);
+        }
+
+        return roles.stream()
+                .filter(role -> role != null)
+                .flatMap(role -> role.getPermissions().stream())
+                .collect(Collectors.toSet());
+    }
+
+    private boolean isAdminUser(AppUser user) {
+        return user != null && user.getRoles() != null && user.getRoles().stream()
+                .anyMatch(role -> role != null && role.getName() != null && role.getName().equalsIgnoreCase("ADMIN"));
     }
 }

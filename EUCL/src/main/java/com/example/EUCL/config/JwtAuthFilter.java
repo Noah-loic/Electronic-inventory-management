@@ -2,7 +2,9 @@ package com.example.EUCL.config;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.example.EUCL.entity.AppUser;
+import com.example.EUCL.enums.Permission;
 import com.example.EUCL.repository.AppUserRepository;
 
 import jakarta.servlet.FilterChain;
@@ -45,11 +48,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                 authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()))
                         );
                     }
-                    if (user.getPermissions() != null) {
-                        user.getPermissions().forEach(permission ->
-                                authorities.add(new SimpleGrantedAuthority(permission.name()))
-                        );
-                    }
+                    Set<Permission> effectivePermissions = resolvePermissions(user);
+                    effectivePermissions.forEach(permission ->
+                            authorities.add(new SimpleGrantedAuthority(permission.name()))
+                    );
                     var auth = new UsernamePasswordAuthenticationToken(user, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
@@ -57,5 +59,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private Set<Permission> resolvePermissions(AppUser user) {
+        if (user.getRoles() != null && user.getRoles().stream().anyMatch(role -> role != null && "ADMIN".equalsIgnoreCase(role.getName()))) {
+            return EnumSet.allOf(Permission.class);
+        }
+
+        if (user.getPermissions() != null) {
+            return user.getPermissions();
+        }
+
+        return EnumSet.noneOf(Permission.class);
     }
 }

@@ -11,8 +11,8 @@ const navLinks = [
     { to: '/admin/assignments',      label: 'Assignments' },
     { to: '/admin/repair-requests',  label: 'Repair Requests' },
     { to: '/admin/audit',            label: 'Audit Report' },
-    { to: '/admin/users',            label: 'Users & Permissions' },
-    { to: '/admin/roles',            label: 'Roles' },
+    { to: '/admin/users',            label: 'Users' },
+    { to: '/admin/roles',            label: 'Roles & Permissions' },
 ]
 
 export default function AdminLayout() {

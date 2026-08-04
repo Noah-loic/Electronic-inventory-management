@@ -4,7 +4,6 @@ import employeesApi from '../../api/employees'
 import rolesApi from '../../api/roles'
 import Pagination from '../../components/Pagination'
 import ComboBox from '../../components/ComboBox'
-import { ALL_PERMISSIONS } from '../../constants/permissions'
 
 const PAGE_SIZE = 8
 
@@ -23,7 +22,7 @@ export default function UsersPage() {
     const [loading, setLoading] = useState(true)
     const [modal, setModal] = useState(false)
     const [form, setForm] = useState(empty)
-    const [selectedPerms, setSelectedPerms] = useState(new Set())
+    const [effectivePerms, setEffectivePerms] = useState([])
     const [selectedRoleIds, setSelectedRoleIds] = useState(new Set())
     const [editId, setEditId] = useState(null)
     const [deleteId, setDeleteId] = useState(null)
@@ -50,7 +49,7 @@ export default function UsersPage() {
 
     const openAdd = () => {
         setForm(empty)
-        setSelectedPerms(new Set())
+        setEffectivePerms([])
         setSelectedRoleIds(new Set())
         setEditId(null)
         setError('')
@@ -65,30 +64,13 @@ export default function UsersPage() {
         })
         const roleIds = new Set((user.roles ?? []).map(r => r.id))
         setSelectedRoleIds(roleIds)
-        setSelectedPerms(new Set(user.permissions ?? []))
+        setEffectivePerms(user.permissions ?? [])
         setEditId(user.id)
         setError('')
         setModal(true)
     }
 
-    const closeModal = () => { setModal(false); setForm(empty); setSelectedPerms(new Set()); setSelectedRoleIds(new Set()); setEditId(null); setError('') }
-
-    const togglePerm = (perm) => {
-        setSelectedPerms(prev => {
-            const next = new Set(prev)
-            next.has(perm) ? next.delete(perm) : next.add(perm)
-            return next
-        })
-    }
-
-    const toggleGroup = (perms) => {
-        const allChecked = perms.every(p => selectedPerms.has(p))
-        setSelectedPerms(prev => {
-            const next = new Set(prev)
-            perms.forEach(p => allChecked ? next.delete(p) : next.add(p))
-            return next
-        })
-    }
+    const closeModal = () => { setModal(false); setForm(empty); setEffectivePerms([]); setSelectedRoleIds(new Set()); setEditId(null); setError('') }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -98,16 +80,13 @@ export default function UsersPage() {
             const payload = { ...form, employeeId: Number(form.employeeId), roleIds: [...selectedRoleIds] }
             if (!editId && !payload.password) { setError('Password is required'); setSaving(false); return }
 
-            let userId = editId
             if (editId) {
                 const updatePayload = { ...payload }
                 if (!updatePayload.password) delete updatePayload.password
                 await usersApi.update(editId, updatePayload)
             } else {
-                const { data } = await usersApi.create(payload)
-                userId = data.id
+                await usersApi.create(payload)
             }
-            await usersApi.setPermissions(userId, [...selectedPerms])
             closeModal()
             await fetchAll()
         } catch (err) {
@@ -133,23 +112,22 @@ export default function UsersPage() {
     }
 
     useEffect(() => {
-        if (selectedRoleIds.size === 0) {
-            setSelectedPerms(new Set())
+        const isAdmin = roles.some(r => selectedRoleIds.has(r.id) && r.name === 'ADMIN')
+        if (isAdmin) {
+            setEffectivePerms(['ALL PERMISSIONS'])
             return
         }
-
         const union = roles
-            .filter(role => selectedRoleIds.has(role.id))
-            .flatMap(role => role.permissions ?? [])
-
-        setSelectedPerms(new Set(union))
+            .filter(r => selectedRoleIds.has(r.id))
+            .flatMap(r => r.permissions ?? [])
+        setEffectivePerms([...new Set(union)])
     }, [selectedRoleIds, roles])
 
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Users & Permissions</h1>
+                    <h1 className="text-2xl font-bold text-gray-800">Users</h1>
                     <p className="text-sm text-gray-500 mt-0.5">Manage system users and their access rights</p>
                 </div>
                 <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
@@ -271,43 +249,22 @@ export default function UsersPage() {
                                     </div>
                                 </div>
 
-                                {/* Permissions */}
+                                {/* Permissions — read-only, derived from roles */}
                                 <div>
-                                    <p className="text-sm font-medium text-gray-700 mb-3">Permissions</p>
-                                    <div className="space-y-3">
-                                        {Object.entries(ALL_PERMISSIONS).map(([group, perms]) => {
-                                            const allChecked = perms.every(p => selectedPerms.has(p))
-                                            const someChecked = perms.some(p => selectedPerms.has(p))
-                                            return (
-                                                <div key={group} className="border border-gray-200 rounded-lg p-3">
-                                                    <label className="flex items-center gap-2 mb-2 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={allChecked}
-                                                            ref={el => { if (el) el.indeterminate = someChecked && !allChecked }}
-                                                            onChange={() => toggleGroup(perms)}
-                                                            className="w-4 h-4 accent-blue-600"
-                                                        />
-                                                        <span className="text-sm font-semibold text-gray-700">{group}</span>
-                                                    </label>
-                                                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 pl-6">
-                                                        {perms.map(perm => (
-                                                            <label key={perm} className="flex items-center gap-1.5 cursor-pointer">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={selectedPerms.has(perm)}
-                                                                    onChange={() => togglePerm(perm)}
-                                                                    className="w-3.5 h-3.5 accent-blue-600"
-                                                                />
-                                                                <span className="text-xs text-gray-600">
-                                                                    {perm.split('_').slice(1).join(' ')}
-                                                                </span>
-                                                            </label>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
+                                    <p className="text-sm font-medium text-gray-700 mb-1">Effective Permissions</p>
+                                    <p className="text-xs text-gray-400 mb-3">Permissions are inherited from assigned roles. Edit them in Roles &amp; Permissions.</p>
+                                    <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 min-h-[60px]">
+                                        {effectivePerms.length === 0 ? (
+                                            <span className="text-xs text-gray-400">No permissions — assign a role above.</span>
+                                        ) : effectivePerms[0] === 'ALL PERMISSIONS' ? (
+                                            <span className="text-xs font-semibold text-purple-600">All permissions (ADMIN)</span>
+                                        ) : (
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {effectivePerms.map(p => (
+                                                    <span key={p} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{p}</span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

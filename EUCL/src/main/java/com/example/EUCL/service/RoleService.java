@@ -2,6 +2,10 @@ package com.example.EUCL.service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.example.EUCL.enums.Permission;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,7 +69,18 @@ public class RoleService {
         role.setName(request.getName());
         role.setDescription(request.getDescription());
         role.setPermissions(request.getPermissions() != null ? request.getPermissions() : new HashSet<>());
-        return roleRepository.save(role);
+        Role saved = roleRepository.save(role);
+
+        if (!"ADMIN".equalsIgnoreCase(saved.getName())) {
+            appUserRepository.findByRoles_Id(id).forEach(user -> {
+                Set<Permission> merged = user.getRoles().stream()
+                        .flatMap(r -> r.getPermissions().stream())
+                        .collect(Collectors.toSet());
+                user.setPermissions(merged);
+                appUserRepository.save(user);
+            });
+        }
+        return saved;
     }
 
     @Transactional

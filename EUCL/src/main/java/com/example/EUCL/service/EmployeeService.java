@@ -98,9 +98,12 @@ public class EmployeeService {
             // Hidden ref sheet
             Sheet refSheet = workbook.createSheet("_ref");
             workbook.setSheetHidden(workbook.getSheetIndex("_ref"), true);
+            Row refHeader = refSheet.createRow(0);
+            refHeader.createCell(0).setCellValue("Department Names");
+            refHeader.createCell(1).setCellValue("Branch Names");
             int maxRows = Math.max(branches.size(), departments.size());
             for (int i = 0; i < maxRows; i++) {
-                Row r = refSheet.createRow(i);
+                Row r = refSheet.createRow(i + 1);
                 if (i < departments.size()) r.createCell(0).setCellValue(departments.get(i));
                 if (i < branches.size())    r.createCell(1).setCellValue(branches.get(i));
             }
@@ -164,7 +167,7 @@ public class EmployeeService {
 
             // Department dropdown (col 2)
             if (!departments.isEmpty()) {
-                String deptFormula = "_ref!$A$1:$A$" + departments.size();
+                String deptFormula = "_ref!$A$2:$A$" + (departments.size() + 1);
                 DataValidationConstraint deptConstraint = dvHelper.createFormulaListConstraint(deptFormula);
                 DataValidation deptValidation = dvHelper.createValidation(deptConstraint, new CellRangeAddressList(2, 1000, 2, 2));
                 deptValidation.setShowErrorBox(true);
@@ -173,7 +176,7 @@ public class EmployeeService {
 
             // Branch dropdown (col 3)
             if (!branches.isEmpty()) {
-                String branchFormula = "_ref!$B$1:$B$" + branches.size();
+                String branchFormula = "_ref!$B$2:$B$" + (branches.size() + 1);
                 DataValidationConstraint branchConstraint = dvHelper.createFormulaListConstraint(branchFormula);
                 DataValidation branchValidation = dvHelper.createValidation(branchConstraint, new CellRangeAddressList(2, 1000, 3, 3));
                 branchValidation.setShowErrorBox(true);

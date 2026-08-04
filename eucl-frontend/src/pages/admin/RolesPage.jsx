@@ -122,7 +122,7 @@ export default function RolesPage() {
         <div>
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Roles</h1>
+                    <h1 className="text-2xl font-bold text-gray-800">Roles & Permissions</h1>
                     <p className="text-sm text-gray-500 mt-0.5">Manage role definitions and their permission sets</p>
                 </div>
                 <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
@@ -211,29 +211,35 @@ export default function RolesPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-700 mb-3">Permissions</p>
+                                    {editId && form.name === 'ADMIN' && (
+                                        <p className="text-xs text-purple-600 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 mb-3">ADMIN role always has all permissions — cannot be modified.</p>
+                                    )}
                                     <div className="space-y-3">
                                         {Object.entries(ALL_PERMISSIONS).map(([group, perms]) => {
+                                            const isAdmin = editId && form.name === 'ADMIN'
                                             const allChecked = perms.every(p => selectedPerms.has(p))
                                             const someChecked = perms.some(p => selectedPerms.has(p))
                                             return (
-                                                <div key={group} className="border border-gray-200 rounded-lg p-3">
-                                                    <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                                                <div key={group} className={`border rounded-lg p-3 ${isAdmin ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200'}`}>
+                                                    <label className={`flex items-center gap-2 mb-2 ${isAdmin ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                                                         <input
                                                             type="checkbox"
                                                             checked={allChecked}
                                                             ref={el => { if (el) el.indeterminate = someChecked && !allChecked }}
-                                                            onChange={() => toggleGroup(perms)}
+                                                            onChange={() => !isAdmin && toggleGroup(perms)}
+                                                            disabled={isAdmin}
                                                             className="w-4 h-4 accent-blue-600"
                                                         />
                                                         <span className="text-sm font-semibold text-gray-700">{group}</span>
                                                     </label>
                                                     <div className="flex flex-wrap gap-x-4 gap-y-1.5 pl-6">
                                                         {perms.map(perm => (
-                                                            <label key={perm} className="flex items-center gap-1.5 cursor-pointer">
+                                                            <label key={perm} className={`flex items-center gap-1.5 ${isAdmin ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                                                                 <input
                                                                     type="checkbox"
                                                                     checked={selectedPerms.has(perm)}
-                                                                    onChange={() => togglePerm(perm)}
+                                                                    onChange={() => !isAdmin && togglePerm(perm)}
+                                                                    disabled={isAdmin}
                                                                     className="w-3.5 h-3.5 accent-blue-600"
                                                                 />
                                                                 <span className="text-xs text-gray-600">{perm.split('_').slice(1).join(' ')}</span>

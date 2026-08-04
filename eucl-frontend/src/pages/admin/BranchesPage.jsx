@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import * as branchesApi from '../../api/branches'
+import employeesApi from '../../api/employees'
+import devicesApi from '../../api/devices'
 import Pagination from '../../components/Pagination'
 
 const PAGE_SIZE = 8
@@ -8,6 +10,8 @@ const empty = { name: '', address: '' }
 
 export default function BranchesPage() {
     const [branches, setBranches] = useState([])
+    const [employeeCounts, setEmployeeCounts] = useState({})
+    const [deviceCounts, setDeviceCounts] = useState({})
     const [loading, setLoading] = useState(true)
     const [modal, setModal] = useState(false)
     const [form, setForm] = useState(empty)
@@ -18,14 +22,28 @@ export default function BranchesPage() {
     const [page, setPage] = useState(1)
 
     const fetchBranches = async () => {
-        try {
-            const { data } = await branchesApi.getAll()
-            setBranches(Array.isArray(data) ? data : [])
-        } catch {
-            setBranches([])
-        } finally {
-            setLoading(false)
+        const [bRes, eRes, dRes] = await Promise.allSettled([
+            branchesApi.getAll(),
+            employeesApi.getAll(),
+            devicesApi.getAll(),
+        ])
+        const branchList = bRes.status === 'fulfilled' && Array.isArray(bRes.value.data) ? bRes.value.data : []
+        setBranches(branchList)
+        if (eRes.status === 'fulfilled' && Array.isArray(eRes.value.data)) {
+            const counts = {}
+            eRes.value.data.forEach(emp => {
+                if (emp.branch?.id) counts[emp.branch.id] = (counts[emp.branch.id] ?? 0) + 1
+            })
+            setEmployeeCounts(counts)
         }
+        if (dRes.status === 'fulfilled' && Array.isArray(dRes.value.data)) {
+            const counts = {}
+            dRes.value.data.forEach(dev => {
+                if (dev.branch?.id) counts[dev.branch.id] = (counts[dev.branch.id] ?? 0) + 1
+            })
+            setDeviceCounts(counts)
+        }
+        setLoading(false)
     }
 
     useEffect(() => { fetchBranches() }, [])
@@ -120,7 +138,17 @@ export default function BranchesPage() {
                             {paginated.map((branch, i) => (
                                 <tr key={branch.id} className="hover:bg-gray-50 transition">
                                     <td className="px-6 py-4 text-gray-400">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                                    <td className="px-6 py-4 font-medium text-gray-800">{branch.name}</td>
+                                    <td className="px-6 py-4 font-medium text-gray-800">
+                                        <div className="flex items-center gap-2">
+                                            {branch.name}
+                                            <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium" title="Employees">
+                                                👤 {employeeCounts[branch.id] ?? 0}
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-medium" title="Devices">
+                                                🖥 {deviceCounts[branch.id] ?? 0}
+                                            </span>
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4 text-gray-600">{branch.address}</td>
                                     <td className="px-6 py-4 text-gray-400">
                                         {branch.createdAt ? new Date(branch.createdAt).toLocaleDateString() : '—'}

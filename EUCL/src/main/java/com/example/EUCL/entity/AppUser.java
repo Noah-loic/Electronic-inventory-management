@@ -45,7 +45,7 @@ public class AppUser {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_permission", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "permission")
+    @Column(name = "permission", length = 50)
     @Enumerated(EnumType.STRING)
     private Set<Permission> permissions = new HashSet<>();
 }

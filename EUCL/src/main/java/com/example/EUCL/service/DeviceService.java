@@ -105,11 +105,15 @@ public class DeviceService {
             // Hidden ref sheet
             Sheet refSheet = workbook.createSheet("_ref");
             workbook.setSheetHidden(workbook.getSheetIndex("_ref"), true);
+            Row refHeader = refSheet.createRow(0);
+            refHeader.createCell(0).setCellValue("Branch Names");
+            refHeader.createCell(1).setCellValue("Valid Statuses");
             for (int i = 0; i < branches.size(); i++) {
-                refSheet.createRow(i).createCell(0).setCellValue(branches.get(i));
+                Row r = refSheet.getRow(i + 1) != null ? refSheet.getRow(i + 1) : refSheet.createRow(i + 1);
+                r.createCell(0).setCellValue(branches.get(i));
             }
             for (int i = 0; i < statuses.length; i++) {
-                Row r = refSheet.getRow(i) != null ? refSheet.getRow(i) : refSheet.createRow(i);
+                Row r = refSheet.getRow(i + 1) != null ? refSheet.getRow(i + 1) : refSheet.createRow(i + 1);
                 r.createCell(1).setCellValue(statuses[i]);
             }
 
@@ -172,7 +176,7 @@ public class DeviceService {
 
             // Branch dropdown (col 5) rows 2-1001
             if (!branches.isEmpty()) {
-                String branchFormula = "_ref!$A$1:$A$" + branches.size();
+                String branchFormula = "_ref!$A$2:$A$" + (branches.size() + 1);
                 DataValidationConstraint branchConstraint = dvHelper.createFormulaListConstraint(branchFormula);
                 DataValidation branchValidation = dvHelper.createValidation(branchConstraint, new CellRangeAddressList(2, 1000, 5, 5));
                 branchValidation.setShowErrorBox(true);
@@ -180,7 +184,7 @@ public class DeviceService {
             }
 
             // Status dropdown (col 4) rows 2-1001
-            String statusFormula = "_ref!$B$1:$B$" + statuses.length;
+            String statusFormula = "_ref!$B$2:$B$" + (statuses.length + 1);
             DataValidationConstraint statusConstraint = dvHelper.createFormulaListConstraint(statusFormula);
             DataValidation statusValidation = dvHelper.createValidation(statusConstraint, new CellRangeAddressList(2, 1000, 4, 4));
             statusValidation.setShowErrorBox(true);

@@ -48,9 +48,9 @@ export function AuthProvider({ children }) {
                 permissions: updated.permissions,
             }))
             setAuth(updated)
-        } catch {
-            // token expired or user deleted — force logout
-            logout()
+        } catch (err) {
+            // only logout if token is actually expired/invalid, ignore network errors
+            if (err?.response?.status === 401) logout()
         }
     }
 

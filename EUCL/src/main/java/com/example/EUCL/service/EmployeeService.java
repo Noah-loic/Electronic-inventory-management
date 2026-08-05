@@ -7,6 +7,8 @@ import com.example.EUCL.entity.Department;
 import com.example.EUCL.entity.Employee;
 import com.example.EUCL.repository.BranchRepository;
 import com.example.EUCL.repository.DepartmentRepository;
+import com.example.EUCL.repository.DeviceAssignmentRepository;
+import com.example.EUCL.repository.DeviceRepository;
 import com.example.EUCL.repository.EmployeeRepository;
 import com.example.EUCL.util.ExcelUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -44,6 +46,8 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final BranchRepository branchRepository;
+    private final DeviceAssignmentRepository assignmentRepository;
+    private final DeviceRepository deviceRepository;
 
     public Employee create(EmployeeRequest request) {
         Employee employee = new Employee();
@@ -73,6 +77,7 @@ public class EmployeeService {
         return employeeRepository.findByBranchId(branchId);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public Employee update(Long id, EmployeeRequest request) {
         Employee employee = findById(id);
         employee.setEmployeeId(request.getEmployeeId());
@@ -81,7 +86,16 @@ public class EmployeeService {
                 .orElseThrow(() -> new EntityNotFoundException("Department not found")));
         employee.setBranch(branchRepository.findById(request.getBranchId())
                 .orElseThrow(() -> new EntityNotFoundException("Branch not found")));
-        return employeeRepository.save(employee);
+        employeeRepository.save(employee);
+
+        // sync active assigned devices to the new branch
+        assignmentRepository.findByEmployeeIdAndIsActiveTrue(employee.getId())
+                .forEach(a -> {
+                    a.getDevice().setBranch(employee.getBranch());
+                    deviceRepository.save(a.getDevice());
+                });
+
+        return employee;
     }
 
     public void delete(Long id) {

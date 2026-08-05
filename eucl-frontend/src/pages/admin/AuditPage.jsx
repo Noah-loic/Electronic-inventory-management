@@ -75,8 +75,7 @@ export default function AuditPage() {
         <div>
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Audit Report</h1>
-                    <p className="text-sm text-gray-500 mt-0.5">View audited device assignment and status history by branch and fiscal year.</p>
+                    <p className="text-sm text-gray-500">View audited device assignment and status history by branch and fiscal year.</p>
                 </div>
             </div>
 
@@ -197,6 +196,31 @@ export default function AuditPage() {
                         {!device.assignmentHistory?.length && !device.statusHistory?.length && (
                             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">No activity in this period.</div>
                         )}
+
+                        {/* Inventory Check */}
+                        <div>
+                            <h3 className="text-sm font-semibold text-gray-800 mb-3">Inventory Check</h3>
+                            {device.inventoryChecked ? (
+                                <div className="flex gap-3">
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${
+                                        device.inventoryPresent
+                                            ? 'bg-green-50 text-green-700 border-green-200'
+                                            : 'bg-red-50 text-red-600 border-red-200'
+                                    }`}>
+                                        {device.inventoryPresent ? '✓' : '✗'} Present
+                                    </span>
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${
+                                        device.inventoryWorking
+                                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                            : 'bg-red-50 text-red-600 border-red-200'
+                                    }`}>
+                                        {device.inventoryWorking ? '✓' : '✗'} Working
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">No inventory check recorded for this fiscal year.</div>
+                            )}
+                        </div>
                     </div>
                 </div>
             ))}

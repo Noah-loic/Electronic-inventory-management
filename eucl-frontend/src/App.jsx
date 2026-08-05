@@ -15,6 +15,8 @@ import DevicesPage from './pages/admin/DevicesPage'
 import AssignmentsPage from './pages/admin/AssignmentsPage'
 import RepairRequestsPage from './pages/admin/RepairRequestsPage'
 import AuditPage from './pages/admin/AuditPage'
+import InventoryPage from './pages/admin/InventoryPage'
+import ReportsPage from './pages/admin/ReportsPage'
 import PortalDashboardPage from './pages/portal/PortalDashboardPage'
 
 function Unauthorized() {
@@ -46,7 +48,7 @@ export default function App() {
                         <Route path="devices" element={<DevicesPage />} />
                         <Route path="assignments" element={<AssignmentsPage />} />
                         <Route path="repair-requests" element={<RepairRequestsPage />} />
-                        <Route path="audit" element={<AuditPage />} />
+                        <Route path="reports" element={<ReportsPage />} />
                         <Route path="users" element={<UsersPage />} />
                         <Route path="roles" element={<RolesPage />} />
                     </Route>
@@ -68,7 +70,7 @@ export default function App() {
                         <Route path="devices" element={<RequirePermission permission="DEVICE_READ"><DevicesPage /></RequirePermission>} />
                         <Route path="assignments" element={<RequirePermission permission="ASSIGNMENT_READ"><AssignmentsPage /></RequirePermission>} />
                         <Route path="repair-requests" element={<RequirePermission permission="REPAIR_REQUEST_READ"><RepairRequestsPage /></RequirePermission>} />
-                        <Route path="audit" element={<RequirePermission permission="REPORT_READ"><AuditPage /></RequirePermission>} />
+                        <Route path="reports" element={<RequirePermission permission="REPORT_READ"><ReportsPage /></RequirePermission>} />
                         <Route path="users" element={<RequirePermission permission="USER_READ"><UsersPage /></RequirePermission>} />
                         <Route path="roles" element={<RequirePermission permission="ROLE_READ"><RolesPage /></RequirePermission>} />
                     </Route>

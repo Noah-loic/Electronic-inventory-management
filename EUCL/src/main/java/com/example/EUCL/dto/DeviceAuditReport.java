@@ -20,4 +20,9 @@ public class DeviceAuditReport {
     private String branch;
     private List<DeviceAssignment> assignmentHistory;
     private List<DeviceStatusHistory> statusHistory;
+
+    // Inventory check for this fiscal year
+    private Boolean inventoryPresent;
+    private Boolean inventoryWorking;
+    private boolean inventoryChecked;
 }

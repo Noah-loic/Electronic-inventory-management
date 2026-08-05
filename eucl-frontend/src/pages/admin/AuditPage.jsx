@@ -28,6 +28,7 @@ export default function AuditPage() {
     const [year, setYear] = useState(new Date().getFullYear())
     const [report, setReport] = useState([])
     const [loading, setLoading] = useState(false)
+    const [exporting, setExporting] = useState(false)
     const [error, setError] = useState('')
     const [hasGenerated, setHasGenerated] = useState(false)
 
@@ -71,6 +72,23 @@ export default function AuditPage() {
         }
     }
 
+    const handleExport = async () => {
+        setExporting(true)
+        try {
+            const res = await auditApi.exportExcel(branchId, year)
+            const url = URL.createObjectURL(new Blob([res.data]))
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `audit-report-${year}.xlsx`
+            a.click()
+            URL.revokeObjectURL(url)
+        } catch {
+            // silent
+        } finally {
+            setExporting(false)
+        }
+    }
+
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
@@ -103,15 +121,25 @@ export default function AuditPage() {
                             ))}
                         </select>
                     </div>
-                    <div className="flex items-end">
+                    <div className="flex items-end gap-2">
                         <button
                             type="button"
                             onClick={handleGenerate}
                             disabled={!branchId || loading}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50"
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50"
                         >
                             {loading ? 'Generating...' : 'Generate Report'}
                         </button>
+                        {report.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={handleExport}
+                                disabled={exporting}
+                                className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50 whitespace-nowrap"
+                            >
+                                {exporting ? 'Exporting...' : ' Export Excel'}
+                            </button>
+                        )}
                     </div>
                 </div>
                 {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
